@@ -107,7 +107,7 @@ async function saveConfig(page, state) {
   state.config.gateway = {
     ...state.config.gateway,
     port, bind, mode, authToken,
-    tailscale: tailscaleAddr ? { address: tailscaleAddr } : undefined,
+    tailscale: tailscaleAddr ? { address: tailscaleAddr } : (state.config.gateway?.tailscale || undefined),
   }
 
   try {

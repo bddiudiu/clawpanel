@@ -42,6 +42,7 @@ export async function render() {
       page.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
       tab.classList.add('active')
       currentTab = tab.dataset.tab
+      page.querySelector('#log-search').value = ''
       loadLog(page, currentTab)
     }
   })

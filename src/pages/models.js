@@ -102,6 +102,7 @@ function renderProviders(page, state) {
         const models = section.querySelector('.provider-models')
         models.style.display = models.style.display === 'none' ? 'block' : 'none'
       } else if (action === 'delete-provider') {
+        if (!confirm(`确定删除 Provider "${providerKey}"？`)) return
         delete state.config.models.providers[providerKey]
         renderProviders(page, state)
         toast(`已删除 ${providerKey}`, 'info')
@@ -124,9 +125,9 @@ function renderProviders(page, state) {
     }
   })
 
-  // 输入框变更同步到 state
+  // 输入框变更实时同步到 state
   listEl.querySelectorAll('[data-field]').forEach(input => {
-    input.onchange = () => {
+    input.oninput = () => {
       const providerKey = input.closest('[data-provider]').dataset.provider
       state.config.models.providers[providerKey][input.dataset.field] = input.value
     }

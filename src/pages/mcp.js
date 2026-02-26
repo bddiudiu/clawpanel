@@ -76,6 +76,7 @@ function renderServers(page, state) {
       const action = btn.dataset.action
 
       if (action === 'delete') {
+        if (!confirm(`确定删除 MCP Server "${key}"？`)) return
         if (state.config.mcpServers) delete state.config.mcpServers[key]
         else delete state.config[key]
         renderServers(page, state)
