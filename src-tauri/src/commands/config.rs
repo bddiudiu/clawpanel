@@ -289,16 +289,20 @@ pub async fn test_model(
         return Err(msg);
     }
 
-    // 提取回复内容
+    // 提取回复内容（兼容 reasoning 模型的 reasoning_content 字段）
     let reply = serde_json::from_str::<serde_json::Value>(&text)
         .ok()
         .and_then(|v| {
-            v.get("choices")
-                .and_then(|c| c.get(0))
-                .and_then(|c| c.get("message"))
-                .and_then(|m| m.get("content"))
+            let msg = v.get("choices")?.get(0)?.get("message")?;
+            // 优先取 content，为空则取 reasoning_content
+            let content = msg.get("content").and_then(|c| c.as_str()).unwrap_or("");
+            if !content.is_empty() {
+                return Some(content.to_string());
+            }
+            msg.get("reasoning_content")
                 .and_then(|c| c.as_str())
-                .map(String::from)
+                .filter(|s| !s.is_empty())
+                .map(|s| format!("[reasoning] {s}"))
         })
         .unwrap_or_else(|| "（无回复内容）".into());
 
