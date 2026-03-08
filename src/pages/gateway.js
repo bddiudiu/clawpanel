@@ -4,6 +4,21 @@
 import { api } from '../lib/tauri-api.js'
 import { toast } from '../components/toast.js'
 
+// 兼容新版 SecretRef：token 可能是 string 或 { $env: "VAR" } / { $ref: "x/y" }
+function _tokenDisplayStr(token) {
+  if (!token) return ''
+  if (typeof token === 'string') return token
+  if (typeof token === 'object') {
+    if (token.$env) return `\$env:${token.$env}`
+    if (token.$ref) return `\$ref:${token.$ref}`
+    return JSON.stringify(token)
+  }
+  return String(token)
+}
+function _isSecretRef(token) {
+  return token && typeof token === 'object' && ('$env' in token || '$ref' in token)
+}
+
 export async function render() {
   const page = document.createElement('div')
   page.className = 'page'
@@ -27,7 +42,7 @@ export async function render() {
     </div>
   `
 
-  const state = { config: null }
+  const state = { config: null, _origToken: null }
   // 非阻塞：先返回 DOM，后台加载数据
   loadConfig(page, state)
   page.querySelector('#btn-save-gw').onclick = async () => {
@@ -50,6 +65,7 @@ async function loadConfig(page, state) {
   const el = page.querySelector('#gateway-config')
   try {
     state.config = await api.readOpenclawConfig()
+    state._origToken = state.config?.gateway?.auth?.token ?? null
     renderConfig(page, state)
   } catch (e) {
     el.innerHTML = '<div style="color:var(--error);padding:20px">加载配置失败: ' + e + '</div>'
@@ -166,10 +182,10 @@ function renderConfig(page, state) {
       <div class="form-group" id="gw-auth-token-group" style="${gw.auth?.mode === 'password' ? 'display:none' : ''}">
         <label class="form-label">访问密钥（Token）</label>
         <div style="display:flex;gap:8px">
-          <input class="form-input" id="gw-token" type="password" value="${gw.auth?.token || gw.authToken || ''}" placeholder="不设置则任何人都能调用" style="flex:1">
+          <input class="form-input" id="gw-token" type="password" value="${_tokenDisplayStr(gw.auth?.token || gw.authToken)}" placeholder="不设置则任何人都能调用" style="flex:1" ${_isSecretRef(gw.auth?.token) ? 'readonly' : ''}>
           <button class="btn btn-sm btn-secondary" id="btn-toggle-token">显示</button>
         </div>
-        <div class="form-hint">设置后，应用调用时需要带上这个密钥才能通过。如果选了「局域网共享」，强烈建议设置</div>
+        <div class="form-hint">${_isSecretRef(gw.auth?.token) ? '当前 Token 通过环境变量/引用配置，如需改为明文请清空后输入' : '设置后，应用调用时需要带上这个密钥才能通过。如果选了「局域网共享」，强烈建议设置'}</div>
       </div>
       <div class="form-group" id="gw-auth-password-group" style="${gw.auth?.mode === 'password' ? '' : 'display:none'}">
         <label class="form-label">密码</label>
@@ -316,9 +332,14 @@ async function saveConfig(page, state) {
   const authPassword = page.querySelector('#gw-password')?.value || ''
   const tailscaleAddr = page.querySelector('#gw-tailscale')?.value || ''
 
+  // 兼容 SecretRef：如果用户没改 token 显示值，保留原始对象
+  let resolvedToken = authToken
+  if (_isSecretRef(state._origToken) && authToken === _tokenDisplayStr(state._origToken)) {
+    resolvedToken = state._origToken
+  }
   const auth = authMode === 'password'
     ? { mode: 'password', password: authPassword }
-    : authToken ? { mode: 'token', token: authToken } : {}
+    : resolvedToken ? { mode: 'token', token: resolvedToken } : {}
 
   const toolsProfile = page.querySelector('input[name="gw-tools-profile"]:checked')?.value || 'full'
   const sessionsVisibility = page.querySelector('#gw-sessions-visibility')?.value || 'all'

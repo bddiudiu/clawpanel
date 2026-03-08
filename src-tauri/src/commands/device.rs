@@ -126,7 +126,7 @@ pub fn create_connect_frame(nonce: String, gateway_token: String) -> Result<Valu
             },
             "role": "operator",
             "scopes": SCOPES,
-            "caps": [],
+            "caps": ["tool-events"],
             "auth": { "token": gateway_token },
             "device": {
                 "id": device_id,

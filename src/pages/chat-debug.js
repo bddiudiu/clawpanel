@@ -97,7 +97,8 @@ async function loadDebugInfo(page) {
 
   // 设备密钥检测（需要等配置加载完成）
   try {
-    const token = info.config?.gateway?.auth?.token || ''
+    const rawToken = info.config?.gateway?.auth?.token
+    const token = (typeof rawToken === 'string') ? rawToken : ''
     info.connectFrame = await api.createConnectFrame('test-nonce', token)
   } catch (e) {
     info.connectFrameError = String(e)
@@ -172,7 +173,7 @@ function renderDebugInfo(el, info) {
     const gw = info.config.gateway || {}
     html += `<table class="debug-table">
       <tr><td>gateway.port</td><td>${gw.port || '(未设置)'}</td></tr>
-      <tr><td>gateway.auth.token</td><td>${gw.auth?.token ? `${statusIcon('ok')} 已设置` : `${statusIcon('warn')} 未设置`}</td></tr>
+      <tr><td>gateway.auth.token</td><td>${gw.auth?.token ? `${statusIcon('ok')} 已设置${typeof gw.auth.token === 'object' ? ' (SecretRef)' : ''}` : `${statusIcon('warn')} 未设置`}</td></tr>
       <tr><td>gateway.enabled</td><td>${gw.enabled !== false ? statusIcon('ok') : statusIcon('err')}</td></tr>
       <tr><td>gateway.mode</td><td>${gw.mode || 'local'}</td></tr>
     </table>`
@@ -234,6 +235,8 @@ function renderDebugInfo(el, info) {
   }
   if (info.config && !info.config.gateway?.auth?.token) {
     html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} Gateway token 未设置（本地开发可选，生产环境建议设置）</li>`
+  } else if (info.config && typeof info.config.gateway?.auth?.token === 'object') {
+    html += `<li style="margin-bottom:6px">${statusIcon('ok')} Gateway token 通过环境变量/引用配置（SecretRef）</li>`
   }
   if (info.connectFrameError) {
     html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} 设备密钥生成失败，请检查 Rust 后端日志</li>`
@@ -292,7 +295,8 @@ function testWebSocket(page) {
   // 读取配置
   api.readOpenclawConfig().then(config => {
     const port = config?.gateway?.port || 18789
-    const token = config?.gateway?.auth?.token || ''
+    const rawToken = config?.gateway?.auth?.token
+    const token = (typeof rawToken === 'string') ? rawToken : ''
     const wsHost = window.__TAURI_INTERNALS__ ? `127.0.0.1:${port}` : location.host
     const url = `ws://${wsHost}/ws?token=${encodeURIComponent(token)}`
 
@@ -521,7 +525,8 @@ async function fixPairing(page) {
     addLog(`${icon('plug', 14)} 测试 WebSocket 连接...`)
     const config = await api.readOpenclawConfig()
     const port = config?.gateway?.port || 18789
-    const token = config?.gateway?.auth?.token || ''
+    const rawToken = config?.gateway?.auth?.token
+    const token = (typeof rawToken === 'string') ? rawToken : ''
     const wsHost = window.__TAURI_INTERNALS__ ? `127.0.0.1:${port}` : location.host
     const url = `ws://${wsHost}/ws?token=${encodeURIComponent(token)}`
 

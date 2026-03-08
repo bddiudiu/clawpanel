@@ -46,6 +46,7 @@ export class WsClient {
     this._challengeTimer = null
     this._wsId = 0
     this._autoPairAttempts = 0
+    this._serverVersion = null
   }
 
   get connected() { return this._connected }
@@ -53,6 +54,7 @@ export class WsClient {
   get snapshot() { return this._snapshot }
   get hello() { return this._hello }
   get sessionKey() { return this._sessionKey }
+  get serverVersion() { return this._serverVersion }
 
   onStatusChange(fn) {
     this._statusListeners.push(fn)
@@ -132,8 +134,8 @@ export class WsClient {
       if (wsId !== this._wsId) return
       this._ws = null
       this._clearChallengeTimer()
-      if (e.code === 4001) {
-        this._setConnected(false, 'auth_failed', 'Token 认证失败')
+      if (e.code === 4001 || e.code === 4003 || e.code === 4004) {
+        this._setConnected(false, 'auth_failed', e.reason || 'Token 认证失败')
         this._intentionalClose = true
         this._flushPending()
         return
@@ -265,6 +267,7 @@ export class WsClient {
     this._autoPairAttempts = 0
     this._hello = payload || null
     this._snapshot = payload?.snapshot || null
+    this._serverVersion = payload?.serverVersion || null
     const defaults = this._snapshot?.sessionDefaults
     if (defaults?.mainSessionKey) {
       this._sessionKey = defaults.mainSessionKey
