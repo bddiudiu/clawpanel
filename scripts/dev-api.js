@@ -479,7 +479,8 @@ function inspectWindowsPortOwners(port = readGatewayPort()) {
   for (const pid of listeningPids) {
     const commandLine = readWindowsProcessCommandLine(pid)
     if (looksLikeGatewayCommandLine(commandLine)) gatewayPids.push(pid)
-    else foreignPids.push(pid)
+    else if (commandLine) foreignPids.push(pid)  // 只有确实读到非 Gateway 命令行时才归为 foreign
+    else gatewayPids.push(pid)  // 命令行读不到时，假定为 Gateway（避免权限问题导致误报）
   }
 
   return {
@@ -1022,7 +1023,18 @@ const handlers = {
   // 服务管理
   async get_services_status() {
     const label = 'ai.openclaw.gateway'
-    const { running, pid } = isMac ? macCheckService(label) : isLinux ? linuxCheckGateway() : await winCheckGateway()
+    let { running, pid } = isMac ? macCheckService(label) : isLinux ? linuxCheckGateway() : await winCheckGateway()
+
+    // 通用兜底：进程检测说没运行，但端口实际在监听 → Gateway 已在运行
+    if (!running) {
+      const port = readGatewayPort()
+      const portOpen = await new Promise(resolve => {
+        const sock = net.createConnection(port, '127.0.0.1', () => { sock.destroy(); resolve(true) })
+        sock.on('error', () => resolve(false))
+        sock.setTimeout(2000, () => { sock.destroy(); resolve(false) })
+      })
+      if (portOpen) { running = true }
+    }
 
     let cliInstalled = false
     if (isMac) {

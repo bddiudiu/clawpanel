@@ -724,7 +724,13 @@ mod platform {
                 Some(command_line) if super::looks_like_gateway_command_line(&command_line) => {
                     gateway_pids.push(pid);
                 }
-                _ => foreign_pids.push(pid),
+                Some(command_line) if !command_line.is_empty() => {
+                    foreign_pids.push(pid);
+                }
+                _ => {
+                    // 命令行读不到时，假定为 Gateway（避免权限问题导致误报）
+                    gateway_pids.push(pid);
+                }
             }
         }
 
