@@ -1171,6 +1171,14 @@ async fn try_r2_install(
         }
     }
 
+    // 归档内目录可能是 qingchencloud/（Windows tar 不支持 @ 前缀），需要重命名
+    let no_at_dir = modules_dir.join("qingchencloud");
+    if no_at_dir.exists() && !qc_dir.exists() {
+        std::fs::rename(&no_at_dir, &qc_dir)
+            .map_err(|e| format!("重命名 qingchencloud → @qingchencloud 失败: {e}"))?;
+        let _ = app.emit("upgrade-log", "目录已修正: qingchencloud → @qingchencloud");
+    }
+
     let _ = app.emit("upgrade-progress", 85);
     let _ = app.emit("upgrade-log", "解压完成，创建 bin 链接...");
 

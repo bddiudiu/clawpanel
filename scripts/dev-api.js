@@ -206,6 +206,13 @@ async function _tryR2Install(version, source, logs) {
   logs.push(`解压到 ${modulesDir}`)
   execSync(`tar -xzf "${tmpPath}" -C "${modulesDir}"`, { timeout: 60000, windowsHide: true })
 
+  // 归档内目录可能是 qingchencloud/（Windows tar 不支持 @ 前缀），需要重命名
+  const noAtDir = path.join(modulesDir, 'qingchencloud')
+  if (fs.existsSync(noAtDir) && !fs.existsSync(qcDir)) {
+    fs.renameSync(noAtDir, qcDir)
+    logs.push('目录已修正: qingchencloud → @qingchencloud')
+  }
+
   // 创建 bin 链接
   let binDir
   if (isWindows) {
