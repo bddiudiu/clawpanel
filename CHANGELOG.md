@@ -45,11 +45,16 @@
 - **gateway_listen_port 缓存** — 新增 5 秒缓存，避免服务检测时频繁读文件解析 JSON
 - **第三方 API 接入引导优化** — 移除内置密钥，改为引导式流程（注册→填密钥→选模型），新增助手↔OpenClaw 双向同步按钮（带确认框）
 - **API 错误信息完整展示** — 模型测试和助手测试的 API 错误（如 429 限流）完整显示 error.message，URL 自动转为可点击链接，方便排查和引流
-- **飞书渠道升级** — 从 `@openclaw/feishu` 迁移到飞书官方插件 `@larksuite/openclaw-lark`，支持文档读写、多维表格、日程等高级能力，一键扫码创建机器人
+- **飞书渠道升级** — 从 `@openclaw/feishu` 迁移到飞书官方插件 `@larksuite/openclaw-lark`，支持文档读写、多维表格、日程等高级能力，一键扫码创建机器人；保存新插件配置时自动禁用旧 feishu 插件防止冲突
+- **日间/夜间模式圆形扩散动画** — 主题切换时新主题从指定角落以圆形向外扩散覆盖整个页面（View Transitions API），白切黑从左下角、黑切白从右上角，不支持的浏览器自动降级
 - **Gateway 重启防卡死** — `gateway_command` 增加 20s 超时，超时后自动 force-kill 残留进程并 fresh start；全平台启动前端口占用检查防止重复拉起；Guardian 自动守护在 Tauri 桌面端也启用；状态轮询间隔从 30s 缩短至 15s
 - **Regex 编译优化** — 多行注释正则改用 LazyLock 静态编译
 - **Agent 配置注释修正** — `agents.profiles` 注释修正为上游实际的 `agents.list`
 - **Linux cmd 候选清理** — 移除 Unix 平台上无意义的 `openclaw.cmd` 候选路径
+- **微信渠道升级体验** — 升级操作不再弹出扫码二维码，按钮文案区分安装/升级
+- **版本更新检测** — CI 不再将 minAppVersion 写死为当前版本，修正 latest.json 生成逻辑
+- **全平台 Clippy 修复** — 修复 Linux/macOS/Windows 上的 Rust Clippy 警告（strip_prefix、dead_code、unnecessary_unwrap 等）
+- **Linux Gateway 守护** — Linux 平台补齐 Duration 导入和 cleanup_zombie_gateway_processes 实现（通过 fuser 查端口占用进程并 kill）
 
 ### 待规划 (Planned)
 
