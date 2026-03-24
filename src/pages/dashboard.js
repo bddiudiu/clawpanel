@@ -46,7 +46,7 @@ export async function render() {
     console.error('[dashboard] loadDashboardData 异常:', e)
     const cardsEl = page.querySelector('#stat-cards')
     if (cardsEl && cardsEl.querySelector('.loading-placeholder')) {
-      cardsEl.innerHTML = `<div class="stat-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary)"><div>加载失败: ${escapeHtml(String(e?.message || e))}</div><button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="this.closest('.page')&&this.closest('.page').__retryLoad?.()">重试</button></div>`
+      cardsEl.innerHTML = `<div class="stat-card" style="grid-column:1/-1;text-align:center;color:var(--text-secondary)"><div>${t('common.loadFailed')}: ${escapeHtml(String(e?.message || e))}</div><button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="this.closest('.page')&&this.closest('.page').__retryLoad?.()">${t('dashboard.retry')}</button></div>`
     }
   })
   page.__retryLoad = () => loadDashboardData(page).catch(() => {})
@@ -93,8 +93,8 @@ async function loadDashboardData(page, fullRefresh = false) {
   const services = servicesRes.status === 'fulfilled' ? servicesRes.value : []
   const version = (versionRes.status === 'fulfilled' && versionRes.value) ? versionRes.value : {}
   const config = configRes.status === 'fulfilled' ? configRes.value : null
-  if (servicesRes.status === 'rejected') toast('服务状态加载失败', 'error')
-  if (versionRes.status === 'rejected') toast('版本信息加载失败', 'error')
+  if (servicesRes.status === 'rejected') toast(t('dashboard.servicesLoadFail'), 'error')
+  if (versionRes.status === 'rejected') toast(t('dashboard.versionLoadFail'), 'error')
 
   // 自愈：补全关键默认值（先重新读取最新配置再 patch，避免用缓存覆盖其他页面的写入）
   if (config) {
@@ -222,12 +222,12 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
   }
 
   const latestBackup = backups.length > 0 ? backups.sort((a,b) => b.created_at - a.created_at)[0] : null
-  const lastUpdate = config?.meta?.lastTouchedVersion || '未知'
+  const lastUpdate = config?.meta?.lastTouchedVersion || t('common.unknown')
   const runtimeVer = statusSummary?.runtimeVersion || null
   const sessions = statusSummary?.sessions || null
 
   const gwPort = config?.gateway?.port || 18789
-  const primaryModel = config?.agents?.defaults?.model?.primary || '未设置'
+  const primaryModel = config?.agents?.defaults?.model?.primary || t('dashboard.notSet')
 
   containerEl.innerHTML = `
     <div class="dashboard-overview">
@@ -238,13 +238,13 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
           </div>
           <div class="overview-card-body">
             <div class="overview-card-title">Gateway</div>
-            <div class="overview-card-value" style="color:${gw?.running ? 'var(--success)' : 'var(--error)'}">${gw?.running ? '运行中' : '已停止'}</div>
-            <div class="overview-card-meta">端口 ${gwPort} ${gw?.pid ? '· PID ' + gw.pid : ''}</div>
+            <div class="overview-card-value" style="color:${gw?.running ? 'var(--success)' : 'var(--error)'}">${gw?.running ? t('common.running') : t('common.stopped')}</div>
+            <div class="overview-card-meta">${t('dashboard.port')} ${gwPort} ${gw?.pid ? '· PID ' + gw.pid : ''}</div>
           </div>
           <div class="overview-card-actions">
             ${gw?.running
-              ? '<button class="btn btn-danger btn-xs" data-action="stop-gw">停止</button><button class="btn btn-secondary btn-xs" data-action="restart-gw">重启</button>'
-              : '<button class="btn btn-primary btn-xs" data-action="start-gw">启动</button>'
+              ? '<button class="btn btn-danger btn-xs" data-action="stop-gw">' + t('dashboard.stopBtn') + '</button><button class="btn btn-secondary btn-xs" data-action="restart-gw">' + t('dashboard.restartBtn') + '</button>'
+              : '<button class="btn btn-primary btn-xs" data-action="start-gw">' + t('dashboard.startBtn') + '</button>'
             }
           </div>
         </div>
@@ -254,9 +254,9 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
           </div>
           <div class="overview-card-body">
-            <div class="overview-card-title">主模型</div>
+            <div class="overview-card-title">${t('dashboard.primaryModel')}</div>
             <div class="overview-card-value" style="font-size:var(--font-size-sm)">${primaryModel}</div>
-            <div class="overview-card-meta">并发上限 ${config?.agents?.defaults?.maxConcurrent || 4}</div>
+            <div class="overview-card-meta">${t('dashboard.maxConcurrent')} ${config?.agents?.defaults?.maxConcurrent || 4}</div>
           </div>
         </div>
 
@@ -265,9 +265,9 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
           </div>
           <div class="overview-card-body">
-            <div class="overview-card-title">MCP 工具</div>
-            <div class="overview-card-value">${mcpCount} 个</div>
-            <div class="overview-card-meta">已挂载扩展</div>
+            <div class="overview-card-title">${t('dashboard.mcpTools')}</div>
+            <div class="overview-card-value">${mcpCount}</div>
+            <div class="overview-card-meta">${t('dashboard.mountedExtensions')}</div>
           </div>
         </div>
 
@@ -276,9 +276,9 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
           <div class="overview-card-body">
-            <div class="overview-card-title">最近备份</div>
-            <div class="overview-card-value" style="font-size:var(--font-size-sm)">${latestBackup ? formatDate(latestBackup.created_at) : '从无备份'}</div>
-            <div class="overview-card-meta">${backups.length} 个备份文件</div>
+            <div class="overview-card-title">${t('dashboard.recentBackup')}</div>
+            <div class="overview-card-value" style="font-size:var(--font-size-sm)">${latestBackup ? formatDate(latestBackup.created_at) : t('dashboard.noBackup')}</div>
+            <div class="overview-card-meta">${t('dashboard.backupCount', { count: backups.length })}</div>
           </div>
         </div>
 
@@ -287,9 +287,9 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </div>
           <div class="overview-card-body">
-            <div class="overview-card-title">Agent 舰队</div>
-            <div class="overview-card-value">${agents.length} 个</div>
-            <div class="overview-card-meta">${agents.filter(a => a.workspace).length} 个独立工作区</div>
+            <div class="overview-card-title">${t('dashboard.agentFleet')}</div>
+            <div class="overview-card-value">${agents.length}</div>
+            <div class="overview-card-meta">${t('dashboard.workspaceCount', { count: agents.filter(a => a.workspace).length })}</div>
           </div>
         </div>
 
@@ -298,7 +298,7 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </div>
           <div class="overview-card-body">
-            <div class="overview-card-title">运行时版本</div>
+            <div class="overview-card-title">${t('dashboard.runtimeVersion')}</div>
             <div class="overview-card-value" style="font-size:var(--font-size-sm)">${runtimeVer || lastUpdate}</div>
             <div class="overview-card-meta">${runtimeVer ? 'OpenClaw Runtime' : 'openclaw.json'}</div>
           </div>
@@ -337,14 +337,14 @@ function renderSessionStatus(sessions) {
       <div class="session-bar-wrap">
         <div class="session-bar" style="width:${Math.min(pct, 100)}%;background:${barColor}"></div>
       </div>
-      <div class="session-row-meta">${tokens} / ${ctx} · 剩余 ${remaining} · ${pct}%</div>
+      <div class="session-row-meta">${tokens} / ${ctx} · ${t('dashboard.remaining')} ${remaining} · ${pct}%</div>
     </div>`
   })
   const defaultModel = sessions.defaults?.model || '—'
   const defaultCtx = sessions.defaults?.contextTokens ? `${Math.round(sessions.defaults.contextTokens / 1000)}k` : '—'
   return `
     <div class="config-section" style="margin-top:16px">
-      <div class="config-section-title">活跃会话 <span style="font-weight:normal;color:var(--text-tertiary);font-size:var(--font-size-xs)">${sessions.count || 0} 个 · 默认模型 ${escapeHtml(defaultModel)} · 上下文 ${defaultCtx}</span></div>
+      <div class="config-section-title">${t('dashboard.activeSessions')} <span style="font-weight:normal;color:var(--text-tertiary);font-size:var(--font-size-xs)">${sessions.count || 0} · ${t('dashboard.defaultModel')} ${escapeHtml(defaultModel)} · ${t('dashboard.context')} ${defaultCtx}</span></div>
       <div class="session-list">${rows.join('')}</div>
     </div>`
 }
@@ -352,7 +352,7 @@ function renderSessionStatus(sessions) {
 function renderLogs(page, logs) {
   const logsEl = page.querySelector('#recent-logs')
   if (!logs) {
-    logsEl.innerHTML = '<div style="color:var(--text-tertiary);padding:12px">暂无日志</div>'
+    logsEl.innerHTML = '<div style="color:var(--text-tertiary);padding:12px">' + t('dashboard.noLogs') + '</div>'
     return
   }
   const lines = logs.trim().split('\n')
@@ -392,7 +392,7 @@ function bindActions(page) {
         window.open(url, '_blank')
       }
     } catch (e2) {
-      toast('打开 Control UI 失败: ' + (e2.message || e2), 'error')
+      toast(t('dashboard.openControlUIFail') + ': ' + (e2.message || e2), 'error')
     }
   })
 
@@ -403,45 +403,45 @@ function bindActions(page) {
     const action = actionBtn.dataset.action
 
     if (action === 'start-gw') {
-      actionBtn.disabled = true; actionBtn.textContent = '启动中...'
+      actionBtn.disabled = true; actionBtn.textContent = t('dashboard.starting')
       try {
         await api.startService('ai.openclaw.gateway')
-        toast('Gateway 启动指令已发送', 'success')
+        toast(t('dashboard.gwStartSent'), 'success')
         setTimeout(() => loadDashboardData(page), 2000)
-      } catch (err) { toast('启动失败: ' + err, 'error') }
-      finally { actionBtn.disabled = false; actionBtn.textContent = '启动' }
+      } catch (err) { toast(t('dashboard.startFail') + ': ' + err, 'error') }
+      finally { actionBtn.disabled = false; actionBtn.textContent = t('dashboard.startBtn') }
     }
     if (action === 'stop-gw') {
-      actionBtn.disabled = true; actionBtn.textContent = '停止中...'
+      actionBtn.disabled = true; actionBtn.textContent = t('dashboard.stopping')
       try {
         await api.stopService('ai.openclaw.gateway')
-        toast('Gateway 已停止', 'success')
+        toast(t('dashboard.gwStopped'), 'success')
         setTimeout(() => loadDashboardData(page), 1500)
-      } catch (err) { toast('停止失败: ' + err, 'error') }
-      finally { actionBtn.disabled = false; actionBtn.textContent = '停止' }
+      } catch (err) { toast(t('dashboard.stopFail') + ': ' + err, 'error') }
+      finally { actionBtn.disabled = false; actionBtn.textContent = t('dashboard.stopBtn') }
     }
     if (action === 'restart-gw') {
-      actionBtn.disabled = true; actionBtn.textContent = '重启中...'
+      actionBtn.disabled = true; actionBtn.textContent = t('dashboard.restarting')
       try {
         await api.restartService('ai.openclaw.gateway')
-        toast('Gateway 重启指令已发送', 'success')
+        toast(t('dashboard.gwRestartSent'), 'success')
         setTimeout(() => loadDashboardData(page), 3000)
-      } catch (err) { toast('重启失败: ' + err, 'error') }
-      finally { actionBtn.disabled = false; actionBtn.textContent = '重启' }
+      } catch (err) { toast(t('dashboard.restartFail') + ': ' + err, 'error') }
+      finally { actionBtn.disabled = false; actionBtn.textContent = t('dashboard.restartBtn') }
     }
   })
 
   btnRestart?.addEventListener('click', async () => {
     btnRestart.disabled = true
     btnRestart.classList.add('btn-loading')
-    btnRestart.textContent = '重启中...'
+    btnRestart.textContent = t('dashboard.restarting')
     try {
       await api.restartService('ai.openclaw.gateway')
     } catch (e) {
-      toast('重启失败: ' + e, 'error')
+      toast(t('dashboard.restartFail') + ': ' + e, 'error')
       btnRestart.disabled = false
       btnRestart.classList.remove('btn-loading')
-      btnRestart.textContent = '重启 Gateway'
+      btnRestart.textContent = t('dashboard.restartGw')
       return
     }
     // 轮询等待实际重启完成
@@ -451,59 +451,59 @@ function bindActions(page) {
         const s = await api.getServicesStatus()
         const gw = s?.find?.(x => x.label === 'ai.openclaw.gateway') || s?.[0]
         if (gw?.running) {
-          toast(`Gateway 已重启 (PID: ${gw.pid})`, 'success')
+          toast(t('dashboard.gwRestarted', { pid: gw.pid }), 'success')
           btnRestart.disabled = false
           btnRestart.classList.remove('btn-loading')
-          btnRestart.textContent = '重启 Gateway'
+          btnRestart.textContent = t('dashboard.restartGw')
           loadDashboardData(page)
           return
         }
       } catch {}
       const sec = Math.floor((Date.now() - t0) / 1000)
-      btnRestart.textContent = `重启中... ${sec}s`
+      btnRestart.textContent = t('dashboard.restarting') + ` ${sec}s`
       await new Promise(r => setTimeout(r, 1500))
     }
-    toast('重启超时，Gateway 可能仍在启动中', 'warning')
+    toast(t('dashboard.restartTimeout'), 'warning')
     btnRestart.disabled = false
     btnRestart.classList.remove('btn-loading')
-    btnRestart.textContent = '重启 Gateway'
+    btnRestart.textContent = t('dashboard.restartGw')
     loadDashboardData(page)
   })
 
   btnUpdate?.addEventListener('click', async () => {
     btnUpdate.disabled = true
-    btnUpdate.textContent = '检查中...'
+    btnUpdate.textContent = t('dashboard.checking')
     try {
       const info = await api.getVersionInfo()
       if (info.ahead_of_recommended && info.recommended) {
-        toast(`当前本地版本 ${info.current || ''} 高于推荐稳定版 ${info.recommended}，可能存在兼容风险`, 'warning')
+        toast(t('dashboard.versionAheadWarn', { current: info.current || '', recommended: info.recommended }), 'warning')
       } else if (info.update_available && info.recommended) {
-        toast(`发现推荐稳定版: ${info.recommended}`, 'info')
+        toast(t('dashboard.updateAvailable', { version: info.recommended }), 'info')
       } else if (info.latest_update_available && info.latest) {
-        toast(`已对齐推荐稳定版，最新上游为 ${info.latest}`, 'info')
+        toast(t('dashboard.alignedWithLatest', { version: info.latest }), 'info')
       } else {
-        toast('已对齐推荐稳定版', 'success')
+        toast(t('dashboard.upToDate'), 'success')
       }
     } catch (e) {
-      toast('检查更新失败: ' + e, 'error')
+      toast(t('dashboard.checkUpdateFail') + ': ' + e, 'error')
     } finally {
       btnUpdate.disabled = false
-      btnUpdate.textContent = '检查更新'
+      btnUpdate.textContent = t('dashboard.checkUpdate')
     }
   })
 
   btnCreateBackup?.addEventListener('click', async () => {
     btnCreateBackup.disabled = true
-    btnCreateBackup.innerHTML = '备份中...'
+    btnCreateBackup.innerHTML = t('dashboard.backingUp')
     try {
       const res = await api.createBackup()
-      toast(`已备份: ${res.name}`, 'success')
+      toast(t('dashboard.backupDone', { name: res.name }), 'success')
       setTimeout(() => loadDashboardData(page), 500)
     } catch (e) {
-      toast('备份失败: ' + e, 'error')
+      toast(t('dashboard.backupFail') + ': ' + e, 'error')
     } finally {
       btnCreateBackup.disabled = false
-      btnCreateBackup.textContent = '创建备份'
+      btnCreateBackup.textContent = t('dashboard.createBackup')
     }
   })
 }

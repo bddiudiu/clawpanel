@@ -10,6 +10,7 @@ import { api } from '../lib/tauri-api.js'
 import { OPENCLAW_KB } from '../lib/openclaw-kb.js'
 import { icon, statusIcon } from '../lib/icons.js'
 import { QTCOOL, PROVIDER_PRESETS, API_TYPES as SHARED_API_TYPES, fetchQtcoolModels } from '../lib/model-presets.js'
+import { t } from '../lib/i18n.js'
 
 // ── 常量 ──
 const STORAGE_KEY = 'clawpanel-assistant'
@@ -38,10 +39,10 @@ const MODE_ICONS = {
   unlimited: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18.178 8c5.096 0 5.096 8 0 8-5.095 0-7.133-8-12.739-8-4.585 0-4.585 8 0 8 5.606 0 7.644-8 12.74-8z"/></svg>',
 }
 const MODES = {
-  chat:     { label: '聊天', desc: '纯对话，不调用任何工具', tools: false, readOnly: false, confirmDanger: true, accent: 'var(--text-secondary)' },
-  plan:     { label: '规划', desc: '可调用工具分析，但不修改文件', tools: true, readOnly: true, confirmDanger: true, accent: 'var(--info)' },
-  execute:  { label: '执行', desc: '完整工具权限，危险操作需确认', tools: true, readOnly: false, confirmDanger: true, accent: 'var(--accent)' },
-  unlimited:{ label: '无限', desc: '最大权限，工具调用无需确认', tools: true, readOnly: false, confirmDanger: false, accent: 'var(--warning)' },
+  chat:     { label: t('assistant.modeChat'), desc: t('assistant.modeChatDesc'), tools: false, readOnly: false, confirmDanger: true, accent: 'var(--text-secondary)' },
+  plan:     { label: t('assistant.modePlan'), desc: t('assistant.modePlanDesc'), tools: true, readOnly: true, confirmDanger: true, accent: 'var(--info)' },
+  execute:  { label: t('assistant.modeExecute'), desc: t('assistant.modeExecuteDesc'), tools: true, readOnly: false, confirmDanger: true, accent: 'var(--accent)' },
+  unlimited:{ label: t('assistant.modeUnlimited'), desc: t('assistant.modeUnlimitedDesc'), tools: true, readOnly: false, confirmDanger: false, accent: 'var(--warning)' },
 }
 const DEFAULT_MODE = 'execute'
 
@@ -63,15 +64,15 @@ function requiresApiKey(apiType) {
 
 function apiHintText(apiType) {
   return {
-    'openai-completions': '自动兼容 Chat Completions 和 Responses API；Ollama 可留空 API Key',
-    'anthropic-messages': '使用 Anthropic Messages API（/v1/messages）',
-    'google-gemini': '使用 Gemini generateContent API',
-  }[normalizeApiType(apiType)] || '自动兼容 Chat Completions 和 Responses API；Ollama 可留空 API Key'
+    'openai-completions': t('assistant.apiHintOpenai'),
+    'anthropic-messages': t('assistant.apiHintAnthropic'),
+    'google-gemini': t('assistant.apiHintGemini'),
+  }[normalizeApiType(apiType)] || t('assistant.apiHintOpenai')
 }
 
 function apiBasePlaceholder(apiType) {
   return {
-    'openai-completions': 'https://api.openai.com/v1 或 http://127.0.0.1:11434',
+    'openai-completions': t('assistant.apiBasePlaceholderOpenai'),
     'anthropic-messages': 'https://api.anthropic.com',
     'google-gemini': 'https://generativelanguage.googleapis.com/v1beta',
   }[normalizeApiType(apiType)] || 'https://api.openai.com/v1'
@@ -79,15 +80,15 @@ function apiBasePlaceholder(apiType) {
 
 function apiKeyPlaceholder(apiType) {
   return {
-    'openai-completions': 'sk-...（Ollama 可留空）',
+    'openai-completions': t('assistant.apiKeyPlaceholderOpenai'),
     'anthropic-messages': 'sk-ant-...',
     'google-gemini': 'AIza...',
   }[normalizeApiType(apiType)] || 'sk-...'
 }
 
 // ── 系统提示词 ──
-const DEFAULT_NAME = '晴辰助手'
-const DEFAULT_PERSONALITY = '专业、友善、简洁。善于分析问题，给出可操作的解决方案。'
+const DEFAULT_NAME = t('assistant.defaultName')
+const DEFAULT_PERSONALITY = t('assistant.defaultPersonality')
 
 function getSystemPromptBase() {
   const name = _config?.assistantName || DEFAULT_NAME
@@ -535,8 +536,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'check-config',
     icon: icon('wrench', 16),
-    name: '检查 OpenClaw 配置',
-    desc: '读取并分析 openclaw.json，检查配置是否正确',
+    name: t('assistant.skillCheckConfig'),
+    desc: t('assistant.skillCheckConfigDesc'),
     tools: ['fileOps'],
     prompt: `请帮我检查 OpenClaw 的配置文件。
 
@@ -553,8 +554,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'diagnose-gateway',
     icon: icon('shield', 16),
-    name: '诊断 Gateway',
-    desc: '检查 Gateway 运行状态、端口、日志',
+    name: t('assistant.skillDiagnoseGateway'),
+    desc: t('assistant.skillDiagnoseGatewayDesc'),
     tools: ['terminal', 'fileOps'],
     prompt: `请帮我诊断 OpenClaw Gateway 的运行状态。
 
@@ -569,8 +570,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'browse-dir',
     icon: icon('folder', 16),
-    name: '浏览配置目录',
-    desc: '查看 .openclaw 目录结构和文件',
+    name: t('assistant.skillBrowseDir'),
+    desc: t('assistant.skillBrowseDirDesc'),
     tools: ['fileOps'],
     prompt: `请帮我浏览 OpenClaw 的配置目录结构。
 
@@ -591,8 +592,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'check-env',
     icon: icon('monitor', 16),
-    name: '检查系统环境',
-    desc: '检测 Node.js、npm 版本和系统信息',
+    name: t('assistant.skillCheckEnv'),
+    desc: t('assistant.skillCheckEnvDesc'),
     tools: ['terminal'],
     prompt: `请帮我检查当前系统环境是否满足 OpenClaw 的运行要求。
 
@@ -607,8 +608,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'analyze-logs',
     icon: icon('clipboard', 16),
-    name: '分析错误日志',
-    desc: '读取最近日志，定位错误原因',
+    name: t('assistant.skillAnalyzeLogs'),
+    desc: t('assistant.skillAnalyzeLogsDesc'),
     tools: ['terminal', 'fileOps'],
     prompt: `请帮我分析 OpenClaw 最近的日志，找出可能的问题。
 
@@ -623,8 +624,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'fix-common',
     icon: icon('wrench', 16),
-    name: '一键排障',
-    desc: '自动检测并修复常见问题',
+    name: t('assistant.skillFixCommon'),
+    desc: t('assistant.skillFixCommonDesc'),
     tools: ['terminal', 'fileOps'],
     prompt: `请帮我自动检测并修复 OpenClaw 的常见问题。
 
@@ -640,8 +641,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'report-bug',
     icon: icon('bug', 16),
-    name: '提交 Bug 报告',
-    desc: '整理问题信息，生成标准 Issue 提交到 GitHub',
+    name: t('assistant.skillReportBug'),
+    desc: t('assistant.skillReportBugDesc'),
     tools: ['terminal', 'fileOps'],
     prompt: `我想反馈一个 Bug，请帮我整理成标准的 GitHub Issue。
 
@@ -664,8 +665,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'pr-assistant',
     icon: icon('zap', 16),
-    name: 'PR 助手',
-    desc: '定位 Bug 原因，生成修复代码和 PR 描述',
+    name: t('assistant.skillPrAssistant'),
+    desc: t('assistant.skillPrAssistantDesc'),
     tools: ['terminal', 'fileOps'],
     prompt: `我发现了一个问题，想提交 PR 来修复它。请帮我走一遍 PR 流程。
 
@@ -689,8 +690,8 @@ const BUILTIN_SKILLS = [
   {
     id: 'skills-manager',
     icon: icon('box', 16),
-    name: 'Skills 管理',
-    desc: '查看、检查依赖、安装 Skills',
+    name: t('assistant.skillSkillsManager'),
+    desc: t('assistant.skillSkillsManagerDesc'),
     tools: ['skills'],
     prompt: `请帮我管理 OpenClaw 的 Skills。
 
@@ -717,17 +718,17 @@ function getEnabledTools() {
   const mode = MODES[currentMode()]
   if (!mode.tools) return [] // 聊天模式：无工具
 
-  const t = _config.tools || {}
+  const tc = _config.tools || {}
   const tools = [...TOOL_DEFS.system, ...TOOL_DEFS.process, ...TOOL_DEFS.interaction]
 
   // 终端工具：受设置开关控制（优先级高于模式）
-  if (t.terminal !== false) tools.push(...TOOL_DEFS.terminal)
+  if (tc.terminal !== false) tools.push(...TOOL_DEFS.terminal)
 
   // 联网搜索工具：受设置开关控制
-  if (t.webSearch !== false) tools.push(...TOOL_DEFS.webSearch)
+  if (tc.webSearch !== false) tools.push(...TOOL_DEFS.webSearch)
 
   // 文件工具：受设置开关控制 + 规划模式排除写入
-  if (t.fileOps !== false) {
+  if (tc.fileOps !== false) {
     if (mode.readOnly) {
       tools.push(...TOOL_DEFS.fileOps.filter(td => td.function.name !== 'write_file'))
     } else {
@@ -1041,12 +1042,12 @@ async function loadOpenClawSoul(agentId = 'default') {
 function getSoulStats() {
   if (!_soulCache) return []
   const files = [
-    { name: 'SOUL.md', desc: '灵魂 · 人格边界', content: _soulCache.soul },
-    { name: 'IDENTITY.md', desc: '身份 · 名称形象', content: _soulCache.identity },
-    { name: 'USER.md', desc: '用户 · 偏好称呼', content: _soulCache.user },
-    { name: 'AGENTS.md', desc: '规则 · 操作指令', content: _soulCache.agents },
-    { name: 'TOOLS.md', desc: '笔记 · 工具环境', content: _soulCache.tools },
-    { name: 'MEMORY.md', desc: '记忆 · 长期存储', content: _soulCache.memory },
+    { name: 'SOUL.md', desc: t('assistant.soulFileSoul'), content: _soulCache.soul },
+    { name: 'IDENTITY.md', desc: t('assistant.soulFileIdentity'), content: _soulCache.identity },
+    { name: 'USER.md', desc: t('assistant.soulFileUser'), content: _soulCache.user },
+    { name: 'AGENTS.md', desc: t('assistant.soulFileAgents'), content: _soulCache.agents },
+    { name: 'TOOLS.md', desc: t('assistant.soulFileTools'), content: _soulCache.tools },
+    { name: 'MEMORY.md', desc: t('assistant.soulFileMemory'), content: _soulCache.memory },
   ]
   return files.map(f => ({
     name: f.name,
@@ -1067,7 +1068,7 @@ function renderSoulStats(soul) {
 
   let html = `<div class="ast-soul-header">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-    <span>已加载 <strong>${loaded.length}/${stats.length}</strong> 个文件（${sizeStr}）</span>
+    <span>${t('assistant.soulLoaded', { loaded: loaded.length, total: stats.length, size: sizeStr })}</span>
   </div>`
 
   html += '<div class="ast-soul-files">'
@@ -1087,9 +1088,9 @@ function renderSoulStats(soul) {
       <div class="ast-soul-file-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
       <div class="ast-soul-file-info">
         <span class="ast-soul-file-name">memory/</span>
-        <span class="ast-soul-file-desc">每日记忆日志</span>
+        <span class="ast-soul-file-desc">${t('assistant.soulMemoryDaily')}</span>
       </div>
-      <span class="ast-soul-file-size">${memCount} 个文件</span>
+      <span class="ast-soul-file-size">${t('assistant.soulMemoryCount', { count: memCount })}</span>
     </div>`
   }
   html += '</div>'
@@ -1175,15 +1176,15 @@ function renderQueue() {
   const editSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
   const delSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
 
-  _queueEl.innerHTML = `<div class="ast-queue-header">${queueSvg} 发送队列 (${_messageQueue.length})</div>` +
+  _queueEl.innerHTML = `<div class="ast-queue-header">${queueSvg} ${t('assistant.sendQueue')} (${_messageQueue.length})</div>` +
     _messageQueue.map((item, i) => `
       <div class="ast-queue-item" data-queue-id="${item.id}">
         <span class="ast-queue-num">${i + 1}</span>
-        <span class="ast-queue-text" data-queue-edit="${item.id}" title="点击编辑">${escHtml(item.text)}</span>
+        <span class="ast-queue-text" data-queue-edit="${item.id}" title="${t('assistant.clickToEdit')}">${escHtml(item.text)}</span>
         <div class="ast-queue-actions">
-          <button class="ast-queue-btn edit" data-queue-edit-btn="${item.id}" title="编辑">${editSvg}</button>
-          <button class="ast-queue-btn send" data-queue-send="${item.id}" title="立即发送（插队）">${sendSvg}</button>
-          <button class="ast-queue-btn delete" data-queue-del="${item.id}" title="删除">${delSvg}</button>
+          <button class="ast-queue-btn edit" data-queue-edit-btn="${item.id}" title="${t('assistant.edit')}">${editSvg}</button>
+          <button class="ast-queue-btn send" data-queue-send="${item.id}" title="${t('assistant.sendNow')}">${sendSvg}</button>
+          <button class="ast-queue-btn delete" data-queue-del="${item.id}" title="${t('common.delete')}">${delSvg}</button>
         </div>
       </div>
     `).join('')
@@ -1203,7 +1204,7 @@ const MAX_IMAGE_DIM = 2048 // 最大边长
 function addImageFromFile(file) {
   if (!file.type.startsWith('image/')) return
   if (file.size > MAX_IMAGE_SIZE * 2) {
-    toast('图片太大（超过 8MB）', 'error')
+    toast(t('assistant.imageTooLarge'), 'error')
     return
   }
   const reader = new FileReader()
@@ -1375,7 +1376,7 @@ function getCurrentSession() {
 function createSession() {
   const session = {
     id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
-    title: '新会话',
+    title: t('assistant.newSession'),
     messages: [],
     createdAt: Date.now(),
     updatedAt: Date.now()
@@ -1395,10 +1396,10 @@ function deleteSession(id) {
 }
 
 function autoTitle(session) {
-  if (session.messages.length >= 1 && session.title === '新会话') {
+  if (session.messages.length >= 1 && session.title === t('assistant.newSession')) {
     const firstUser = session.messages.find(m => m.role === 'user')
     if (firstUser) {
-      const txt = firstUser._text || (typeof firstUser.content === 'string' ? firstUser.content : (firstUser.content?.find?.(p => p.type === 'text')?.text || '[图片消息]'))
+      const txt = firstUser._text || (typeof firstUser.content === 'string' ? firstUser.content : (firstUser.content?.find?.(p => p.type === 'text')?.text || t('assistant.imageMessage')))
       // 取第一行或前30字作为标题（跳过空行）
       const firstLine = txt.split('\n').find(l => l.trim()) || txt
       const title = firstLine.slice(0, 30) + (firstLine.length > 30 ? '...' : '')
@@ -1461,7 +1462,7 @@ const TIMEOUT_CONNECT = 30_000   // 连接超时 30 秒
 async function callAI(messages, onChunk) {
   const apiType = normalizeApiType(_config.apiType)
   if (!_config.baseUrl || !_config.model || (requiresApiKey(apiType) && !_config.apiKey)) {
-    throw new Error('请先配置 AI 模型（点击右上角设置按钮）')
+    throw new Error(t('assistant.errConfigFirst'))
   }
 
   const base = cleanBaseUrl(_config.baseUrl, apiType)
@@ -1493,7 +1494,7 @@ async function callAI(messages, onChunk) {
     } catch (err) {
       // 超时触发的 abort → 转换为超时错误
       if (err.name === 'AbortError' && _timedOut) {
-        throw new Error(`请求超时（${TIMEOUT_TOTAL / 1000} 秒），模型响应时间过长`)
+        throw new Error(t('assistant.errTimeout', { seconds: TIMEOUT_TOTAL / 1000 }))
       }
       // 如果是 "legacy protocol" 或 "use /v1/responses" 类错误，自动切换到 Responses API
       const msg = err.message || ''
@@ -1792,7 +1793,7 @@ async function readSSEStream(resp, onEvent, signal) {
       // chunk 超时：如果 30 秒内没有收到任何数据，视为超时
       const readPromise = reader.read()
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('流式响应超时：30 秒内未收到数据')), TIMEOUT_CHUNK)
+        setTimeout(() => reject(new Error(t('assistant.errStreamTimeout'))), TIMEOUT_CHUNK)
       )
       const { done, value } = await Promise.race([readPromise, timeoutPromise])
       if (done) {
@@ -1873,19 +1874,19 @@ async function executeTool(name, args) {
       return JSON.stringify(await api.skillsCheck(), null, 2)
     case 'skills_install_dep': {
       const result = await api.skillsInstallDep(args.kind, args.spec)
-      return result?.success ? `安装成功\n${result.output || ''}` : '安装失败'
+      return result?.success ? `${t('assistant.toolInstallSuccess')}\n${result.output || ''}` : t('assistant.toolInstallFail')
     }
     case 'skills_clawhub_search': {
       const items = await api.skillsClawHubSearch(args.query)
-      if (!items?.length) return '未找到匹配的 Skill'
-      return items.map(i => `- **${i.slug}**: ${i.description || '无描述'}`).join('\n')
+      if (!items?.length) return t('assistant.toolNoSkillFound')
+      return items.map(i => `- **${i.slug}**: ${i.description || t('assistant.toolNoDesc')}`).join('\n')
     }
     case 'skills_clawhub_install': {
       const result = await api.skillsClawHubInstall(args.slug)
-      return result?.success ? `Skill "${args.slug}" 安装成功\n${result.output || ''}` : '安装失败'
+      return result?.success ? `Skill "${args.slug}" ${t('assistant.toolInstallSuccess')}\n${result.output || ''}` : t('assistant.toolInstallFail')
     }
     default:
-      return `未知工具: ${name}`
+      return `${t('assistant.toolUnknown')}: ${name}`
   }
 }
 
@@ -1904,11 +1905,11 @@ function showAskUserCard({ question, type, options, placeholder }) {
     }).join('')
 
     const textHtml = type === 'text' || !options?.length
-      ? `<textarea class="ast-ask-text" placeholder="${escHtml(placeholder || '请输入...')}" rows="2"></textarea>`
+      ? `<textarea class="ast-ask-text" placeholder="${escHtml(placeholder || t('assistant.askPlaceholder'))}" rows="2"></textarea>`
       : ''
 
     const customHtml = type !== 'text' && options?.length
-      ? `<div class="ast-ask-custom"><input type="text" class="ast-ask-custom-input" placeholder="或输入自定义内容..."></div>`
+      ? `<div class="ast-ask-custom"><input type="text" class="ast-ask-custom-input" placeholder="${t('assistant.askCustomPlaceholder')}"></div>`
       : ''
 
     const card = document.createElement('div')
@@ -1920,8 +1921,8 @@ function showAskUserCard({ question, type, options, placeholder }) {
       ${customHtml}
       ${textHtml}
       <div class="ast-ask-actions">
-        <button class="ast-ask-submit btn btn-primary btn-sm">确认</button>
-        <button class="ast-ask-skip btn btn-secondary btn-sm">跳过</button>
+        <button class="ast-ask-submit btn btn-primary btn-sm">${t('assistant.askConfirm')}</button>
+        <button class="ast-ask-skip btn btn-secondary btn-sm">${t('assistant.askSkip')}</button>
       </div>
     `
 
@@ -1939,12 +1940,12 @@ function showAskUserCard({ question, type, options, placeholder }) {
         const checked = [...card.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value)
         const custom = card.querySelector('.ast-ask-custom-input')?.value?.trim()
         if (custom) checked.push(custom)
-        answer = checked.join('、') || '未选择'
+        answer = checked.join(', ') || t('assistant.askNotSelected')
       } else {
         // single
         const checked = card.querySelector('input[type="radio"]:checked')
         const custom = card.querySelector('.ast-ask-custom-input')?.value?.trim()
-        answer = custom || checked?.value || '未选择'
+        answer = custom || checked?.value || t('assistant.askNotSelected')
       }
 
       // 替换卡片为已回答状态
@@ -1955,18 +1956,18 @@ function showAskUserCard({ question, type, options, placeholder }) {
       card.classList.add('answered')
 
       if (session) setSessionStatus(session.id, 'streaming')
-      resolve(`用户回答: ${answer}`)
+      resolve(`User answer: ${answer}`)
     })
 
     // 跳过处理
     card.querySelector('.ast-ask-skip').addEventListener('click', () => {
       card.innerHTML = `<div class="ast-ask-answered">
         <div class="ast-ask-question">${escHtml(question)}</div>
-        <div class="ast-ask-answer" style="color:var(--text-tertiary)">— 已跳过</div>
+        <div class="ast-ask-answer" style="color:var(--text-tertiary)">— ${t('assistant.askSkipped')}</div>
       </div>`
       card.classList.add('answered')
       if (session) setSessionStatus(session.id, 'streaming')
-      resolve('用户跳过了此问题')
+      resolve('User skipped this question')
     })
   })
 }
@@ -1979,19 +1980,19 @@ async function confirmToolCall(tc, critical = false) {
 
   let desc = ''
   if (name === 'run_command') {
-    desc = `执行命令:\n\n${args.command}${args.cwd ? '\n\n工作目录: ' + args.cwd : ''}`
+    desc = `${t('assistant.confirmRunCmd')}:\n\n${args.command}${args.cwd ? '\n\n' + t('assistant.confirmCwd') + ': ' + args.cwd : ''}`
   } else if (name === 'write_file') {
     const preview = (args.content || '').slice(0, 200)
-    desc = `写入文件:\n${args.path}\n\n内容预览:\n${preview}${(args.content || '').length > 200 ? '\n...(已截断)' : ''}`
+    desc = `${t('assistant.confirmWriteFile')}:\n${args.path}\n\n${t('assistant.confirmPreview')}:\n${preview}${(args.content || '').length > 200 ? '\n...(' + t('assistant.confirmTruncated') + ')' : ''}`
   }
 
   const prefix = critical
-    ? '⛔ 安全围栏拦截 — 此命令被识别为极端危险操作！\n\n'
+    ? '⛔ ' + t('assistant.confirmCritical') + '\n\n'
     : ''
 
   const session = getCurrentSession()
   if (session) setSessionStatus(session.id, 'waiting')
-  const result = await showConfirm(`${prefix}AI 请求执行以下操作:\n\n${desc}\n\n是否允许？`)
+  const result = await showConfirm(`${prefix}${t('assistant.confirmAiRequest')}:\n\n${desc}\n\n${t('assistant.confirmAllow')}`)
   if (session) setSessionStatus(session.id, 'streaming')
   return result
 }
@@ -2021,14 +2022,14 @@ async function executeToolWithSafety(toolName, args, tcForConfirm) {
   const isCritical = toolName === 'run_command' && isCriticalCommand(args.command)
   if (isCritical) {
     approved = await confirmToolCall(tcForConfirm || { function: { name: toolName, arguments: JSON.stringify(args) } }, true)
-    if (!approved) result = '用户拒绝了此危险操作'
+    if (!approved) result = t('assistant.toolRejectedDanger')
   } else if (mode.confirmDanger && DANGEROUS_TOOLS.has(toolName)) {
     approved = await confirmToolCall(tcForConfirm || { function: { name: toolName, arguments: JSON.stringify(args) } })
-    if (!approved) result = '用户拒绝了此操作'
+    if (!approved) result = t('assistant.toolRejected')
   }
   if (approved) {
     try { result = await executeTool(toolName, args) }
-    catch (err) { result = `执行失败: ${typeof err === 'string' ? err : err.message || JSON.stringify(err)}` }
+    catch (err) { result = `${t('assistant.toolExecFail')}: ${typeof err === 'string' ? err : err.message || JSON.stringify(err)}` }
   }
   return { result, approved }
 }
@@ -2037,7 +2038,7 @@ async function executeToolWithSafety(toolName, args, tcForConfirm) {
 async function callAIWithTools(messages, onStatus, onToolProgress) {
   const apiType = normalizeApiType(_config.apiType)
   if (!_config.baseUrl || !_config.model || (requiresApiKey(apiType) && !_config.apiKey)) {
-    throw new Error('请先配置 AI 模型（点击右上角设置按钮）')
+    throw new Error(t('assistant.errConfigFirst'))
   }
 
   const base = cleanBaseUrl(_config.baseUrl, apiType)
@@ -2054,16 +2055,16 @@ async function callAIWithTools(messages, onStatus, onToolProgress) {
     }
     if (autoRounds > 0 && round >= nextPauseAt) {
       const answer = await showAskUserCard({
-        question: `AI 已连续调用工具 ${round} 轮，可能陷入循环。你希望怎么做？`,
+        question: t('assistant.toolLoopQuestion', { round }),
         type: 'single',
-        options: [`继续执行 ${autoRounds} 轮`, '不再中断，一直执行', '让 AI 换个思路', '停止并总结'],
+        options: [t('assistant.toolLoopContinue', { rounds: autoRounds }), t('assistant.toolLoopNoBreak'), t('assistant.toolLoopRethink'), t('assistant.toolLoopStop')],
       })
-      if (answer.includes('停止')) {
-        return { content: '用户要求停止工具调用，以下是目前的执行情况摘要。', toolHistory }
-      } else if (answer.includes('换个思路')) {
-        currentMessages.push({ role: 'user', content: '请换一种方法来解决这个问题，不要重复之前失败的操作。' })
+      if (answer.includes(t('assistant.toolLoopStop')) || answer.includes('stop') || answer.includes('Stop')) {
+        return { content: 'User requested to stop tool calls. Here is a summary of what has been done so far.', toolHistory }
+      } else if (answer.includes(t('assistant.toolLoopRethink')) || answer.includes('rethink')) {
+        currentMessages.push({ role: 'user', content: 'Please try a different approach to solve this problem. Do not repeat previously failed operations.' })
         nextPauseAt = round + autoRounds
-      } else if (answer.includes('不再中断')) {
+      } else if (answer.includes(t('assistant.toolLoopNoBreak')) || answer.includes('no break')) {
         nextPauseAt = Infinity
       } else {
         nextPauseAt = round + autoRounds
@@ -2071,7 +2072,7 @@ async function callAIWithTools(messages, onStatus, onToolProgress) {
     }
 
     _abortController = new AbortController()
-    onStatus(round === 0 ? 'AI 思考中...' : `AI 处理工具结果 (第${round + 1}轮)...`)
+    onStatus(round === 0 ? t('assistant.aiThinking') : t('assistant.aiProcessingRound', { round: round + 1 }))
 
     // ── Anthropic 工具调用 ──
     if (apiType === 'anthropic-messages') {
@@ -2259,9 +2260,9 @@ function renderSessionList() {
     const dot = dotClass ? `<span class="${dotClass}"></span>` : ''
     return `<div class="ast-session-item ${s.id === _currentSessionId ? 'active' : ''}" data-id="${s.id}">
       ${dot}<span class="ast-session-title">${escHtml(s.title)}</span>
-      <button class="ast-session-delete" data-delete="${s.id}" title="删除会话">×</button>
+      <button class="ast-session-delete" data-delete="${s.id}" title="${t('assistant.deleteSession')}">×</button>
     </div>`
-  }).join('') || '<div class="ast-empty">暂无会话</div>'
+  }).join('') || '<div class="ast-empty">' + t('assistant.noSessions') + '</div>'
 }
 
 function renderToolBlocks(toolHistory) {
@@ -2271,13 +2272,13 @@ function renderToolBlocks(toolHistory) {
     if (tc.name === 'ask_user') return ''
 
     const tcIcon = { run_command: icon('terminal', 14), write_file: icon('edit', 14), read_file: icon('file', 14), list_directory: icon('folder', 14), get_system_info: icon('monitor', 14), list_processes: icon('list', 14), check_port: icon('plug', 14), skills_list: icon('box', 14), skills_info: icon('box', 14), skills_check: icon('box', 14), skills_install_dep: icon('download', 14), skills_clawhub_search: icon('search', 14), skills_clawhub_install: icon('download', 14) }[tc.name] || icon('wrench', 14)
-    const label = { run_command: '执行命令', read_file: '读取文件', write_file: '写入文件', list_directory: '列出目录', get_system_info: '系统信息', list_processes: '进程列表', check_port: '端口检测', skills_list: 'Skills 列表', skills_info: 'Skill 详情', skills_check: 'Skills 检查', skills_install_dep: '安装依赖', skills_clawhub_search: '搜索 ClawHub', skills_clawhub_install: '安装 Skill' }[tc.name] || tc.name
+    const label = { run_command: t('assistant.toolRunCmd'), read_file: t('assistant.toolReadFile'), write_file: t('assistant.toolWriteFile'), list_directory: t('assistant.toolListDir'), get_system_info: t('assistant.toolSysInfo'), list_processes: t('assistant.toolProcessList'), check_port: t('assistant.toolCheckPort'), skills_list: t('assistant.toolSkillsList'), skills_info: t('assistant.toolSkillInfo'), skills_check: t('assistant.toolSkillsCheck'), skills_install_dep: t('assistant.toolInstallDep'), skills_clawhub_search: t('assistant.toolClawHubSearch'), skills_clawhub_install: t('assistant.toolClawHubInstall') }[tc.name] || tc.name
     const argsStr = tc.name === 'run_command' ? escHtml(tc.args.command || '')
       : tc.name === 'read_file' ? escHtml(tc.args.path || '')
       : tc.name === 'write_file' ? escHtml(tc.args.path || '')
       : tc.name === 'list_directory' ? escHtml(tc.args.path || '')
       : tc.name === 'get_system_info' ? ''
-      : tc.name === 'list_processes' ? escHtml(tc.args.filter || '全部')
+      : tc.name === 'list_processes' ? escHtml(tc.args.filter || t('assistant.toolFilterAll'))
       : tc.name === 'check_port' ? escHtml(String(tc.args.port || ''))
       : tc.name === 'skills_info' ? escHtml(tc.args.name || '')
       : tc.name === 'skills_install_dep' ? escHtml(`${tc.args.kind}: ${tc.args.spec?.formula || tc.args.spec?.package || tc.args.spec?.module || ''}`)
@@ -2288,12 +2289,12 @@ function renderToolBlocks(toolHistory) {
 
     if (tc.pending) {
       return `<div class="ast-tool-block pending">
-        <div class="ast-tool-summary">${tcIcon} <strong>${label}</strong> <code>${argsStr}</code> <span class="ast-tool-status"><span class="ast-typing">执行中...</span></span></div>
+        <div class="ast-tool-summary">${tcIcon} <strong>${label}</strong> <code>${argsStr}</code> <span class="ast-tool-status"><span class="ast-typing">${t('assistant.toolExecuting')}</span></span></div>
       </div>`
     }
 
     const statusClass = tc.approved === false ? 'denied' : 'ok'
-    const statusLabel = tc.approved === false ? '已拒绝' : '已执行'
+    const statusLabel = tc.approved === false ? t('assistant.toolDenied') : t('assistant.toolDone')
     const resultPreview = (tc.result || '').length > 500 ? tc.result.slice(0, 500) + '...' : (tc.result || '')
     return `<details class="ast-tool-block ${statusClass}">
       <summary class="ast-tool-summary">${tcIcon} <strong>${label}</strong> <code>${argsStr}</code> <span class="ast-tool-status">${statusLabel}</span></summary>
@@ -2332,13 +2333,13 @@ function renderErrorBanner() {
       <span class="ast-error-banner-icon">${statusIcon('warn', 18)}</span>
       <span class="ast-error-banner-title">${escHtml(ctx.title)}</span>
       <div class="ast-error-banner-actions">
-        <button class="btn-analyze">让 AI 分析</button>
-        <button class="btn-dismiss">忽略</button>
+        <button class="btn-analyze">${t('assistant.errorAnalyze')}</button>
+        <button class="btn-dismiss">${t('assistant.errorDismiss')}</button>
       </div>
     </div>
     ${ctx.hint ? `<div class="ast-error-banner-hint">${escHtml(ctx.hint)}</div>` : ''}
     ${ctx.error ? `
-      <button class="ast-error-toggle">查看详细日志 ▼</button>
+      <button class="ast-error-toggle">${t('assistant.errorShowLog')} ▼</button>
       <div class="ast-error-banner-detail">
         <pre>${escHtml(ctx.error)}</pre>
       </div>
@@ -2351,7 +2352,7 @@ function renderErrorBanner() {
   if (toggleBtn && detailEl) {
     toggleBtn.addEventListener('click', () => {
       const expanded = detailEl.classList.toggle('expanded')
-      toggleBtn.textContent = expanded ? '收起日志 ▲' : '查看详细日志 ▼'
+      toggleBtn.textContent = expanded ? t('assistant.errorHideLog') + ' ▲' : t('assistant.errorShowLog') + ' ▼'
     })
   }
 
@@ -2408,7 +2409,7 @@ function renderMessages() {
           </svg>
         </div>
         <h3>${_config?.assistantName || DEFAULT_NAME}</h3>
-        <p>我可以帮你分析日志、排查问题、配置 OpenClaw。<br>点击下方技能卡片，AI 会自动调用工具完成任务。</p>
+        <p>${t('assistant.welcomeText')}</p>
         ${getAssistantGuideHtml()}
         <div class="ast-skills-grid">${skillCards}</div>
       </div>
@@ -2424,7 +2425,7 @@ function renderMessages() {
       const imagesHtml = m._images?.length ? `<div class="ast-msg-images">${m._images.map(img =>
         img.dataUrl
           ? `<img class="ast-msg-img" src="${img.dataUrl}" alt="${escHtml(img.name)}" style="max-width:${Math.min(img.width || 300, 300)}px" loading="lazy"/>`
-          : `<div class="ast-msg-img-loading" data-db-id="${img.dbId || ''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>${escHtml(img.name || '图片')}</span></div>`
+          : `<div class="ast-msg-img-loading" data-db-id="${img.dbId || ''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>${escHtml(img.name || t('assistant.image'))}</span></div>`
       ).join('')}</div>` : ''
       return `<div class="ast-msg ast-msg-user" data-msg-idx="${idx}"><div class="ast-msg-bubble ast-msg-bubble-user">${imagesHtml}${textPart ? escHtml(textPart) : ''}</div></div>`
     } else if (m.role === 'assistant') {
@@ -2443,7 +2444,7 @@ function renderMessages() {
       const img = document.createElement('img')
       img.className = 'ast-msg-img'
       img.src = dataUrl
-      img.alt = el.querySelector('span')?.textContent || '图片'
+      img.alt = el.querySelector('span')?.textContent || t('assistant.image')
       img.loading = 'lazy'
       img.style.maxWidth = '300px'
       el.replaceWith(img)
@@ -2482,11 +2483,11 @@ function buildTestResult({ success, elapsed, usedApi, reqUrl, reqBody, respStatu
   }
   // 状态行
   if (error) {
-    html += `<span style="color:var(--error)">✗ 请求失败: ${escHtml(error)}</span>`
+    html += `<span style="color:var(--error)">✗ ${t('assistant.testFailed')}: ${escHtml(error)}</span>`
   } else if (success) {
-    html += `<span style="color:var(--success)">✓ 模型回复成功 (${elapsed}ms, ${usedApi} API)</span>`
+    html += `<span style="color:var(--success)">✓ ${t('assistant.testSuccess', { elapsed, api: usedApi })}</span>`
   } else {
-    html += `<span style="color:var(--warning)">${statusIcon('warn', 14)} HTTP ${respStatus} — 请求完成但未解析到回复内容</span>`
+    html += `<span style="color:var(--warning)">${statusIcon('warn', 14)} HTTP ${respStatus} — ${t('assistant.testNoReply')}</span>`
   }
   // API 错误信息（完整展示，URL 可点击）
   if (apiErrMsg) {
@@ -2520,18 +2521,18 @@ function showSettings() {
   overlay.className = 'modal-overlay'
   overlay.innerHTML = `
     <div class="modal" style="max-width:500px">
-      <div class="modal-title" style="margin-bottom:0">${c.assistantName || DEFAULT_NAME} — 设置</div>
+      <div class="modal-title" style="margin-bottom:0">${c.assistantName || DEFAULT_NAME} — ${t('assistant.settings')}</div>
       <div class="ast-settings-tabs">
-        <button class="ast-tab active" data-tab="api">模型配置</button>
-        <button class="ast-tab" data-tab="tools">工具权限</button>
-        <button class="ast-tab" data-tab="persona">助手人设</button>
-        <button class="ast-tab" data-tab="knowledge">知识库</button>
+        <button class="ast-tab active" data-tab="api">${t('assistant.settingsTabApi')}</button>
+        <button class="ast-tab" data-tab="tools">${t('assistant.settingsTabTools')}</button>
+        <button class="ast-tab" data-tab="persona">${t('assistant.settingsTabPersona')}</button>
+        <button class="ast-tab" data-tab="knowledge">${t('assistant.settingsTabKnowledge')}</button>
       </div>
       <div class="modal-body">
       <div class="ast-settings-form">
         <div class="ast-tab-panel active" data-panel="api">
           <div class="form-group" style="margin-bottom:8px">
-            <label class="form-label">快捷选择</label>
+            <label class="form-label">${t('assistant.quickSelect')}</label>
             <div id="ast-provider-presets" style="display:flex;flex-wrap:wrap;gap:6px">
               ${PROVIDER_PRESETS.filter(p => !p.hidden).map(p => `<button class="btn btn-sm btn-secondary ast-preset-btn" data-key="${p.key}" data-url="${escHtml(p.baseUrl)}" data-api="${p.api}" style="font-size:12px;padding:3px 10px">${p.label}${p.badge ? ' <span style="font-size:9px;background:var(--accent);color:#fff;padding:1px 4px;border-radius:6px;margin-left:3px">' + p.badge + '</span>' : ''}</button>`).join('')}
             </div>
@@ -2543,7 +2544,7 @@ function showSettings() {
               <input class="form-input" id="ast-baseurl" value="${escHtml(c.baseUrl)}" placeholder="${escHtml(apiBasePlaceholder(c.apiType))}">
             </div>
             <div class="form-group" style="width:170px">
-              <label class="form-label">API 类型</label>
+              <label class="form-label">${t('assistant.apiType')}</label>
               <select class="form-input" id="ast-apitype">
                 ${API_TYPES.map(t => `<option value="${t.value}" ${c.apiType === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
               </select>
@@ -2555,22 +2556,22 @@ function showSettings() {
               <input class="form-input" id="ast-apikey" type="password" value="${escHtml(c.apiKey)}" placeholder="${escHtml(apiKeyPlaceholder(c.apiType))}">
             </div>
             <div style="display:flex;gap:6px;padding-bottom:1px">
-              <button class="btn btn-sm btn-secondary" id="ast-btn-test" title="测试连通性">测试</button>
-              <button class="btn btn-sm btn-secondary" id="ast-btn-models" title="从 API 获取可用模型">拉取</button>
-              <button class="btn btn-sm btn-secondary" id="ast-btn-import" title="从 OpenClaw 导入模型配置">${icon('download', 14)} 导入</button>
+              <button class="btn btn-sm btn-secondary" id="ast-btn-test" title="${t('assistant.testConnTitle')}">${t('assistant.testBtn')}</button>
+              <button class="btn btn-sm btn-secondary" id="ast-btn-models" title="${t('assistant.fetchModelsTitle')}">${t('assistant.fetchBtn')}</button>
+              <button class="btn btn-sm btn-secondary" id="ast-btn-import" title="${t('assistant.importTitle')}">${icon('download', 14)} ${t('assistant.importBtn')}</button>
             </div>
           </div>
           <div id="ast-test-result" style="margin:6px 0 2px;font-size:12px;min-height:16px"></div>
           <div style="display:flex;gap:10px;align-items:flex-end">
             <div class="form-group" style="flex:1">
-              <label class="form-label">模型</label>
+              <label class="form-label">${t('assistant.model')}</label>
               <div style="position:relative">
                 <input class="form-input" id="ast-model" value="${escHtml(c.model)}" placeholder="gpt-4o / deepseek-chat" autocomplete="off">
                 <div id="ast-model-dropdown" class="ast-model-dropdown" style="display:none"></div>
               </div>
             </div>
             <div class="form-group" style="width:80px">
-              <label class="form-label">温度</label>
+              <label class="form-label">${t('assistant.temperature')}</label>
               <input class="form-input" id="ast-temp" type="number" value="${c.temperature || 0.7}" min="0" max="2" step="0.1">
             </div>
           </div>
@@ -2581,139 +2582,139 @@ function showSettings() {
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">
                 <div>
                   <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-                    <span style="font-weight:700;font-size:var(--font-size-sm)">${icon('zap', 14)} 晴辰云</span>
-                    <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 7px;border-radius:8px">推荐</span>
+                    <span style="font-weight:700;font-size:var(--font-size-sm)">${icon('zap', 14)} ${t('assistant.qtcoolName')}</span>
+                    <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 7px;border-radius:8px">${t('assistant.qtcoolRecommend')}</span>
                   </div>
                   <div style="font-size:11px;color:var(--text-tertiary);line-height:1.4">
-                    GPT-5 / Codex 全系列，低至官方价 2-3 折，不满意随时可退
+                    ${t('assistant.qtcoolDesc')}
                   </div>
                 </div>
-                <a href="${QTCOOL.checkinUrl}" target="_blank" class="btn btn-primary btn-xs" style="flex-shrink:0">${icon('gift', 11)} 签到领额度</a>
+                <a href="${QTCOOL.checkinUrl}" target="_blank" class="btn btn-primary btn-xs" style="flex-shrink:0">${icon('gift', 11)} ${t('assistant.qtcoolCheckin')}</a>
               </div>
               <div style="font-size:var(--font-size-xs);color:var(--text-secondary);margin-bottom:8px">
-                填入 API Key 后选择模型即可接入。没有密钥？<a href="${QTCOOL.checkinUrl}" target="_blank" style="color:var(--primary)">每日签到</a> 领取，在 <a href="${QTCOOL.usageUrl}" target="_blank" style="color:var(--primary)">用户后台</a> 复制
+                ${t('assistant.qtcoolInstructions')}
               </div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-                <input class="form-input" id="ast-qtcool-key" placeholder="粘贴 API Key" style="font-size:12px;padding:5px 10px;flex:1;min-width:120px">
+                <input class="form-input" id="ast-qtcool-key" placeholder="${t('assistant.qtcoolKeyPlaceholder')}" style="font-size:12px;padding:5px 10px;flex:1;min-width:120px">
                 <input type="checkbox" id="ast-qtcool-customkey" style="display:none">
               </div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <select id="ast-qtcool-model" class="form-input" style="font-size:12px;padding:5px 10px;min-width:130px;flex:1">
-                  <option value="" disabled selected>加载模型列表...</option>
+                  <option value="" disabled selected>${t('assistant.qtcoolLoadingModels')}</option>
                 </select>
-                <button class="btn btn-sm btn-secondary" id="ast-qtcool-test">${icon('search', 12)} 测试</button>
-                <button class="btn btn-sm btn-primary" id="ast-qtcool-apply">${icon('zap', 12)} 接入</button>
+                <button class="btn btn-sm btn-secondary" id="ast-qtcool-test">${icon('search', 12)} ${t('assistant.testBtn')}</button>
+                <button class="btn btn-sm btn-primary" id="ast-qtcool-apply">${icon('zap', 12)} ${t('assistant.qtcoolApply')}</button>
               </div>
               <div id="ast-qtcool-status" style="margin-top:8px;font-size:11px;min-height:16px;line-height:1.5"></div>
             </div>
             <div style="border-top:1px solid var(--border-primary);padding:6px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:var(--bg-tertiary)">
               <div style="display:flex;gap:8px;align-items:center">
-                <button class="btn btn-xs btn-secondary" id="ast-qtcool-sync-to" title="将助手配置同步到 OpenClaw 全局">${icon('upload', 11)} 同步到 OpenClaw</button>
-                <button class="btn btn-xs btn-secondary" id="ast-qtcool-sync-from" title="从 OpenClaw 全局配置读取">${icon('download', 11)} 从 OpenClaw 读取</button>
+                <button class="btn btn-xs btn-secondary" id="ast-qtcool-sync-to" title="${t('assistant.qtcoolSyncToTitle')}">${icon('upload', 11)} ${t('assistant.qtcoolSyncTo')}</button>
+                <button class="btn btn-xs btn-secondary" id="ast-qtcool-sync-from" title="${t('assistant.qtcoolSyncFromTitle')}">${icon('download', 11)} ${t('assistant.qtcoolSyncFrom')}</button>
               </div>
-              <a href="${QTCOOL.site}" target="_blank" style="color:var(--primary);text-decoration:none;font-size:11px">${icon('external-link', 11)} 了解更多</a>
+              <a href="${QTCOOL.site}" target="_blank" style="color:var(--primary);text-decoration:none;font-size:11px">${icon('external-link', 11)} ${t('assistant.qtcoolLearnMore')}</a>
             </div>
           </div>
         </div>
         <div class="ast-tab-panel" data-panel="tools">
-          <div class="form-hint" style="margin-bottom:10px">工具开关优先级高于模式设置。关闭的工具在任何模式下都不可用。</div>
+          <div class="form-hint" style="margin-bottom:10px">${t('assistant.toolsHint')}</div>
           <label class="ast-switch-row">
-            <span>终端工具 <span style="color:var(--text-tertiary);font-size:11px">— 允许执行 Shell 命令</span></span>
+            <span>${t('assistant.toolTerminal')} <span style="color:var(--text-tertiary);font-size:11px">— ${t('assistant.toolTerminalDesc')}</span></span>
             <input type="checkbox" id="ast-tool-terminal" ${c.tools?.terminal !== false ? 'checked' : ''}>
             <span class="ast-switch-track"></span>
           </label>
           <label class="ast-switch-row">
-            <span>文件工具 <span style="color:var(--text-tertiary);font-size:11px">— 允许读写文件和浏览目录</span></span>
+            <span>${t('assistant.toolFileOps')} <span style="color:var(--text-tertiary);font-size:11px">— ${t('assistant.toolFileOpsDesc')}</span></span>
             <input type="checkbox" id="ast-tool-fileops" ${c.tools?.fileOps !== false ? 'checked' : ''}>
             <span class="ast-switch-track"></span>
           </label>
           <label class="ast-switch-row">
-            <span>联网搜索 <span style="color:var(--text-tertiary);font-size:11px">— 允许搜索互联网和抓取网页</span></span>
+            <span>${t('assistant.toolWebSearch')} <span style="color:var(--text-tertiary);font-size:11px">— ${t('assistant.toolWebSearchDesc')}</span></span>
             <input type="checkbox" id="ast-tool-websearch" ${c.tools?.webSearch !== false ? 'checked' : ''}>
             <span class="ast-switch-track"></span>
           </label>
           <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color)">
             <div class="form-group" style="margin-bottom:4px">
-              <label class="form-label">工具连续执行轮次 <span style="color:var(--text-tertiary);font-size:11px">— 超过该轮次后暂停并询问</span></label>
+              <label class="form-label">${t('assistant.autoRoundsLabel')} <span style="color:var(--text-tertiary);font-size:11px">— ${t('assistant.autoRoundsDesc')}</span></label>
               <select class="form-input" id="ast-auto-rounds" style="width:100%">
-                <option value="0" ${(c.autoRounds ?? 8) === 0 ? 'selected' : ''}>∞ 无限制（一直执行，不中断）</option>
-                <option value="8" ${(c.autoRounds ?? 8) === 8 ? 'selected' : ''}>8 轮（默认）</option>
-                <option value="15" ${(c.autoRounds ?? 8) === 15 ? 'selected' : ''}>15 轮</option>
-                <option value="30" ${(c.autoRounds ?? 8) === 30 ? 'selected' : ''}>30 轮</option>
-                <option value="50" ${(c.autoRounds ?? 8) === 50 ? 'selected' : ''}>50 轮</option>
+                <option value="0" ${(c.autoRounds ?? 8) === 0 ? 'selected' : ''}>∞ ${t('assistant.autoRoundsUnlimited')}</option>
+                <option value="8" ${(c.autoRounds ?? 8) === 8 ? 'selected' : ''}>8 ${t('assistant.autoRoundsDefault')}</option>
+                <option value="15" ${(c.autoRounds ?? 8) === 15 ? 'selected' : ''}>15 ${t('assistant.autoRoundsUnit')}</option>
+                <option value="30" ${(c.autoRounds ?? 8) === 30 ? 'selected' : ''}>30 ${t('assistant.autoRoundsUnit')}</option>
+                <option value="50" ${(c.autoRounds ?? 8) === 50 ? 'selected' : ''}>50 ${t('assistant.autoRoundsUnit')}</option>
               </select>
             </div>
-            <div class="form-hint">设为「无限制」时 AI 将不会中断执行，适合复杂任务。随时可点停止按钮手动中止。</div>
+            <div class="form-hint">${t('assistant.autoRoundsHint')}</div>
           </div>
-          <div class="form-hint" style="margin-top:10px">进程列表、端口检测、系统信息工具始终可用（非聊天模式下）。</div>
+          <div class="form-hint" style="margin-top:10px">${t('assistant.toolsAlwaysAvailable')}</div>
         </div>
         <div class="ast-tab-panel" data-panel="persona">
           <div class="form-group">
-            <label class="form-label">身份来源</label>
+            <label class="form-label">${t('assistant.personaSource')}</label>
             <div style="display:flex;flex-direction:column;gap:6px">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
                 <input type="radio" name="ast-soul-source" value="default" ${!c.soulSource || c.soulSource === 'default' ? 'checked' : ''}>
-                <span>ClawPanel 默认人设</span>
+                <span>${t('assistant.personaDefault')}</span>
               </label>
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
                 <input type="radio" name="ast-soul-source" value="openclaw" ${c.soulSource?.startsWith('openclaw:') ? 'checked' : ''}>
-                <span>OpenClaw Agent 身份 <span style="font-size:11px;color:var(--text-tertiary)">（借尸还魂）</span></span>
+                <span>${t('assistant.personaOpenClaw')} <span style="font-size:11px;color:var(--text-tertiary)">${t('assistant.personaOpenClawHint')}</span></span>
               </label>
             </div>
           </div>
           <div id="ast-soul-default" style="${c.soulSource?.startsWith('openclaw:') ? 'display:none' : ''}">
             <div class="form-group">
-              <label class="form-label">助手名称</label>
+              <label class="form-label">${t('assistant.personaName')}</label>
               <input class="form-input" id="ast-name" value="${escHtml(c.assistantName || DEFAULT_NAME)}" placeholder="${DEFAULT_NAME}">
             </div>
             <div class="form-group">
-              <label class="form-label">助手性格</label>
+              <label class="form-label">${t('assistant.personaPersonality')}</label>
               <textarea class="form-input" id="ast-personality" rows="3" placeholder="${DEFAULT_PERSONALITY}" style="resize:vertical">${escHtml(c.assistantPersonality || DEFAULT_PERSONALITY)}</textarea>
-              <div class="form-hint">描述助手的说话风格和行为方式，会注入到系统提示词中</div>
+              <div class="form-hint">${t('assistant.personaPersonalityHint')}</div>
             </div>
           </div>
           <div id="ast-soul-openclaw" style="${c.soulSource?.startsWith('openclaw:') ? '' : 'display:none'}">
             <div class="form-group" style="margin-top:4px">
-              <label class="form-label">选择 Agent</label>
+              <label class="form-label">${t('assistant.personaSelectAgent')}</label>
               <div style="display:flex;gap:6px;align-items:center">
                 <select class="form-input" id="ast-soul-agent" style="flex:1;font-family:var(--font-mono);font-size:13px">
-                  <option value="" disabled>扫描中...</option>
+                  <option value="" disabled>${t('assistant.personaScanning')}</option>
                 </select>
                 <button class="btn btn-sm btn-primary" id="ast-btn-load-soul" style="gap:4px;white-space:nowrap">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
-                  加载灵魂
+                  ${t('assistant.personaLoadSoul')}
                 </button>
-                <button class="btn btn-sm btn-ghost" id="ast-btn-refresh-soul" style="gap:4px;white-space:nowrap" title="重新扫描 Agent 列表">
+                <button class="btn btn-sm btn-ghost" id="ast-btn-refresh-soul" style="gap:4px;white-space:nowrap" title="${t('assistant.personaRefreshTitle')}">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                 </button>
               </div>
             </div>
             <div id="ast-soul-status" class="ast-soul-card" style="margin-top:8px">
               <div style="text-align:center;padding:16px 0;color:var(--text-tertiary);font-size:12px">
-                选择 Agent 后点击「加载灵魂」读取身份文件
+                ${t('assistant.personaSoulHint')}
               </div>
             </div>
-            <div class="form-hint" style="margin-top:8px">附身后助手将继承 Agent 的人格、记忆和用户偏好，同时保留 ClawPanel 的工具能力。</div>
+            <div class="form-hint" style="margin-top:8px">${t('assistant.personaSoulInherit')}</div>
           </div>
         </div>
         <div class="ast-tab-panel" data-panel="knowledge">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <div class="form-hint" style="margin:0">为助手添加自定义知识，对话时会自动注入到系统提示词中。</div>
+            <div class="form-hint" style="margin:0">${t('assistant.kbDesc')}</div>
             <button class="btn btn-sm btn-primary" id="ast-kb-add" style="gap:4px;white-space:nowrap">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              添加
+              ${t('common.add')}
             </button>
           </div>
           <div id="ast-kb-editor" style="display:none;margin-bottom:10px">
             <div class="form-group" style="margin-bottom:6px">
-              <input class="form-input" id="ast-kb-name" placeholder="知识名称，如：产品文档、API参考" style="font-size:13px">
+              <input class="form-input" id="ast-kb-name" placeholder="${t('assistant.kbNamePlaceholder')}" style="font-size:13px">
             </div>
             <div class="form-group" style="margin-bottom:6px">
-              <textarea class="form-input" id="ast-kb-content" rows="6" placeholder="粘贴知识内容（支持 Markdown 格式）..." style="resize:vertical;font-size:12px;font-family:var(--font-mono)"></textarea>
+              <textarea class="form-input" id="ast-kb-content" rows="6" placeholder="${t('assistant.kbContentPlaceholder')}" style="resize:vertical;font-size:12px;font-family:var(--font-mono)"></textarea>
             </div>
             <div style="display:flex;gap:6px;justify-content:flex-end">
-              <button class="btn btn-sm btn-secondary" id="ast-kb-cancel">取消</button>
-              <button class="btn btn-sm btn-primary" id="ast-kb-save">保存知识</button>
+              <button class="btn btn-sm btn-secondary" id="ast-kb-cancel">${t('common.cancel')}</button>
+              <button class="btn btn-sm btn-primary" id="ast-kb-save">${t('assistant.kbSave')}</button>
             </div>
           </div>
           <div class="ast-soul-card" id="ast-kb-list"></div>
@@ -2722,8 +2723,8 @@ function showSettings() {
       </div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary btn-sm" data-action="cancel">取消</button>
-        <button class="btn btn-primary btn-sm" data-action="confirm">保存</button>
+        <button class="btn btn-secondary btn-sm" data-action="cancel">${t('common.cancel')}</button>
+        <button class="btn btn-primary btn-sm" data-action="confirm">${t('common.save')}</button>
       </div>
     </div>
   `
@@ -2762,7 +2763,7 @@ function showSettings() {
       const detailEl = overlay.querySelector('#ast-preset-detail')
       if (detailEl && preset && (preset.desc || preset.site)) {
         let html = preset.desc ? `<div style="color:var(--text-secondary);line-height:1.5">${preset.desc}</div>` : ''
-        if (preset.site) html += `<a href="${preset.site}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:11px;margin-top:3px;display:inline-block">→ 访问 ${preset.label}官网</a>`
+        if (preset.site) html += `<a href="${preset.site}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:11px;margin-top:3px;display:inline-block">→ ${t('assistant.visitSite', { name: preset.label })}</a>`
         detailEl.innerHTML = html
         detailEl.style.display = 'block'
       } else if (detailEl) {
@@ -2792,12 +2793,12 @@ function showSettings() {
 
   // 扫描并填充 Agent 下拉列表
   const refreshAgentList = async () => {
-    agentSelect.innerHTML = '<option value="" disabled selected>扫描中...</option>'
+    agentSelect.innerHTML = '<option value="" disabled selected>' + t('assistant.personaScanning') + '</option>'
     agentSelect.disabled = true
     const agents = await scanOpenClawAgents()
     agentSelect.innerHTML = ''
     if (agents.length === 0) {
-      agentSelect.innerHTML = '<option value="" disabled selected>未发现 Agent</option>'
+      agentSelect.innerHTML = '<option value="" disabled selected>' + t('assistant.personaNoAgent') + '</option>'
       agentSelect.disabled = true
       return
     }
@@ -2806,7 +2807,7 @@ function showSettings() {
     for (const a of agents) {
       const opt = document.createElement('option')
       opt.value = a.id
-      opt.textContent = a.label + (a.hasWorkspace ? '' : ' (无 workspace)')
+      opt.textContent = a.label + (a.hasWorkspace ? '' : ' (' + t('assistant.personaNoWorkspace') + ')')
       if (!a.hasWorkspace) opt.disabled = true
       if (a.id === currentId) opt.selected = true
       agentSelect.appendChild(opt)
@@ -2817,19 +2818,19 @@ function showSettings() {
   // 加载灵魂函数
   const doLoadSoul = async (btn) => {
     const selectedAgent = agentSelect.value
-    if (!selectedAgent) { toast('请先选择一个 Agent', 'warning'); return }
+    if (!selectedAgent) { toast(t('assistant.personaSelectFirst'), 'warning'); return }
     const statusEl = overlay.querySelector('#ast-soul-status')
     const origHTML = btn.innerHTML
     btn.disabled = true
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ast-spin"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg> 加载中...'
-    statusEl.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--text-tertiary);font-size:12px">正在读取 Agent「${selectedAgent}」的 workspace...</div>`
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ast-spin"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg> ' + t('assistant.loading')
+    statusEl.innerHTML = `<div style="text-align:center;padding:16px 0;color:var(--text-tertiary);font-size:12px">${t('assistant.personaLoadingAgent', { agent: selectedAgent })}</div>`
 
     const soul = await loadOpenClawSoul(selectedAgent)
     btn.disabled = false
     btn.innerHTML = origHTML
 
     if (!soul) {
-      statusEl.innerHTML = `<div style="text-align:center;padding:16px 0"><div style="color:var(--error);font-size:12px;font-weight:500">加载失败</div><div style="color:var(--text-tertiary);font-size:11px;margin-top:4px">Agent「${selectedAgent}」的 workspace 不存在或无法访问</div></div>`
+      statusEl.innerHTML = `<div style="text-align:center;padding:16px 0"><div style="color:var(--error);font-size:12px;font-weight:500">${t('assistant.personaLoadFailed')}</div><div style="color:var(--text-tertiary);font-size:11px;margin-top:4px">${t('assistant.personaLoadFailedDetail', { agent: selectedAgent })}</div></div>`
       return
     }
 
@@ -2840,7 +2841,7 @@ function showSettings() {
   // 刷新按钮：重新扫描 Agent 列表
   overlay.querySelector('#ast-btn-refresh-soul').onclick = (e) => {
     refreshAgentList()
-    overlay.querySelector('#ast-soul-status').innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--text-tertiary);font-size:12px">选择 Agent 后点击「加载灵魂」读取身份文件</div>'
+    overlay.querySelector('#ast-soul-status').innerHTML = '<div style="text-align:center;padding:16px 0;color:var(--text-tertiary);font-size:12px">' + t('assistant.personaSoulHint') + '</div>'
   }
 
   // 打开面板时：如果已选 openclaw 模式，自动扫描 Agent 列表
@@ -2864,28 +2865,28 @@ function showSettings() {
     if (kbFiles.length === 0) {
       kbListEl.innerHTML = `<div style="text-align:center;padding:20px 0;color:var(--text-tertiary);font-size:12px">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:6px;opacity:0.4"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        <div>点击「添加」按钮添加知识文件</div></div>`
+        <div>${t('assistant.kbEmpty')}</div></div>`
       kbHintEl.textContent = ''
       return
     }
     const totalSize = kbFiles.reduce((s, f) => s + (f.content?.length || 0), 0)
     const sizeStr = totalSize > 1024 ? (totalSize / 1024).toFixed(1) + ' KB' : totalSize + ' B'
     const enabledCount = kbFiles.filter(f => f.enabled !== false).length
-    kbHintEl.textContent = `共 ${kbFiles.length} 个知识文件（${enabledCount} 个启用，${sizeStr}），保存后生效。`
+    kbHintEl.textContent = t('assistant.kbSummary', { total: kbFiles.length, enabled: enabledCount, size: sizeStr })
     let html = '<div class="ast-soul-files">'
     kbFiles.forEach((f, i) => {
       const fSize = f.content?.length > 1024 ? (f.content.length / 1024).toFixed(1) + ' KB' : (f.content?.length || 0) + ' B'
       const enabled = f.enabled !== false
-      html += `<div class="ast-soul-file ${enabled ? 'loaded' : 'missing'}" data-kb-idx="${i}" style="cursor:pointer" title="点击编辑">
-        <button style="padding:2px;background:none;border:none;cursor:pointer;flex-shrink:0" data-kb-toggle="${i}" title="${enabled ? '点击禁用' : '点击启用'}">
+      html += `<div class="ast-soul-file ${enabled ? 'loaded' : 'missing'}" data-kb-idx="${i}" style="cursor:pointer" title="${t('assistant.clickToEdit')}">
+        <button style="padding:2px;background:none;border:none;cursor:pointer;flex-shrink:0" data-kb-toggle="${i}" title="${enabled ? t('assistant.kbClickDisable') : t('assistant.kbClickEnable')}">
           <div class="ast-soul-file-icon">${enabled ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>'}</div>
         </button>
         <div class="ast-soul-file-info">
           <span class="ast-soul-file-name">${escHtml(f.name)}</span>
-          <span class="ast-soul-file-desc">${f.content?.split('\n').length || 0} 行 · 点击编辑</span>
+          <span class="ast-soul-file-desc">${f.content?.split('\n').length || 0} ${t('assistant.kbLines')}</span>
         </div>
         <span class="ast-soul-file-size">${fSize}</span>
-        <button class="btn btn-sm" style="padding:2px 6px;font-size:11px;color:var(--error);background:none;border:none;cursor:pointer" data-kb-del="${i}" title="删除">✕</button>
+        <button class="btn btn-sm" style="padding:2px 6px;font-size:11px;color:var(--error);background:none;border:none;cursor:pointer" data-kb-del="${i}" title="${t('common.delete')}">✕</button>
       </div>`
     })
     html += '</div>'
@@ -2901,11 +2902,11 @@ function showSettings() {
     if (idx >= 0) {
       overlay.querySelector('#ast-kb-name').value = kbFiles[idx].name
       overlay.querySelector('#ast-kb-content').value = kbFiles[idx].content
-      overlay.querySelector('#ast-kb-save').textContent = '更新'
+      overlay.querySelector('#ast-kb-save').textContent = t('common.update')
     } else {
       overlay.querySelector('#ast-kb-name').value = ''
       overlay.querySelector('#ast-kb-content').value = ''
-      overlay.querySelector('#ast-kb-save').textContent = '保存知识'
+      overlay.querySelector('#ast-kb-save').textContent = t('assistant.kbSave')
     }
     overlay.querySelector('#ast-kb-name').focus()
   }
@@ -2916,8 +2917,8 @@ function showSettings() {
   overlay.querySelector('#ast-kb-save').onclick = () => {
     const name = overlay.querySelector('#ast-kb-name').value.trim()
     const content = overlay.querySelector('#ast-kb-content').value.trim()
-    if (!name) { toast('请输入知识名称', 'warning'); return }
-    if (!content) { toast('请输入知识内容', 'warning'); return }
+    if (!name) { toast(t('assistant.kbNameRequired'), 'warning'); return }
+    if (!content) { toast(t('assistant.kbContentRequired'), 'warning'); return }
     if (kbEditIdx >= 0) {
       kbFiles[kbEditIdx].name = name
       kbFiles[kbEditIdx].content = content
@@ -2972,13 +2973,13 @@ function showSettings() {
   overlay.querySelector('#ast-qtcool-test').onclick = async (e) => {
     const btn = e.target
     const selectedModel = qtcoolModelSelect.value
-    if (!selectedModel) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} 请先选择模型</span>`; return }
+    if (!selectedModel) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} ${t('assistant.qtcoolSelectModel')}</span>`; return }
     const key = qtcoolKeyInput.value.trim()
-    if (!key) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} 请先输入 API Key（<a href="${QTCOOL.checkinUrl}" target="_blank" style="color:var(--primary)">签到领取</a>）</span>`; return }
+    if (!key) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} ${t('assistant.qtcoolEnterKey')}</span>`; return }
 
     btn.disabled = true
-    btn.textContent = '测试中...'
-    qtcoolStatus.innerHTML = '<span style="color:rgba(255,255,255,0.5)">正在连接 GPT-AI 网关...</span>'
+    btn.textContent = t('assistant.testing')
+    qtcoolStatus.innerHTML = `<span style="color:rgba(255,255,255,0.5)">${t('assistant.qtcoolConnecting')}</span>`
     const t0 = Date.now()
     try {
       const resp = await fetch(QTCOOL.baseUrl + '/chat/completions', {
@@ -2991,7 +2992,7 @@ function showSettings() {
       if (resp.ok) {
         const data = await resp.json()
         const reply = data.choices?.[0]?.message?.content || ''
-        qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} 测试通过（${(ms/1000).toFixed(1)}s）</span><span style="color:rgba(255,255,255,0.4);margin-left:6px">${selectedModel} 响应正常</span>`
+        qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} ${t('assistant.qtcoolTestPass', { time: (ms/1000).toFixed(1) })}</span><span style="color:rgba(255,255,255,0.4);margin-left:6px">${selectedModel} OK</span>`
       } else {
         const errText = await resp.text().catch(() => '')
         let errMsg = `HTTP ${resp.status}`
@@ -3001,35 +3002,35 @@ function showSettings() {
         } catch { if (errText) errMsg += ' — ' + errText.slice(0, 200) }
         // 将 URL 转为可点击链接
         const errHtml = errMsg.replace(/(https?:\/\/[^\s,，。）)]+)/g, '<a href="$1" target="_blank" style="color:var(--primary)">$1</a>')
-        qtcoolStatus.innerHTML = `<div style="color:#f87171;line-height:1.5">${statusIcon('err', 14)} <strong>测试失败</strong></div><div style="color:var(--text-secondary);font-size:11px;line-height:1.5;margin-top:4px;word-break:break-all">${errHtml}</div>`
+        qtcoolStatus.innerHTML = `<div style="color:#f87171;line-height:1.5">${statusIcon('err', 14)} <strong>${t('assistant.qtcoolTestFail')}</strong></div><div style="color:var(--text-secondary);font-size:11px;line-height:1.5;margin-top:4px;word-break:break-all">${errHtml}</div>`
       }
     } catch (err) {
-      qtcoolStatus.innerHTML = `<div style="color:#f87171">${statusIcon('err', 14)} 连接失败：${err.message}</div>`
+      qtcoolStatus.innerHTML = `<div style="color:#f87171">${statusIcon('err', 14)} ${t('assistant.qtcoolConnectFail')}: ${err.message}</div>`
     }
     btn.disabled = false
-    btn.innerHTML = `${icon('search', 12)} 测试`
+    btn.innerHTML = `${icon('search', 12)} ${t('assistant.testBtn')}`
   }
 
   // 一键接入：填充配置 + 提示设为 OpenClaw 主模型
   overlay.querySelector('#ast-qtcool-apply').onclick = async () => {
     const selectedModel = qtcoolModelSelect.value
-    if (!selectedModel) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} 请先选择模型</span>`; return }
+    if (!selectedModel) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} ${t('assistant.qtcoolSelectModel')}</span>`; return }
     const key = qtcoolKeyInput.value.trim()
-    if (!key) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} 请先输入 API Key（<a href="${QTCOOL.checkinUrl}" target="_blank" style="color:var(--primary)">签到领取</a>）</span>`; return }
+    if (!key) { qtcoolStatus.innerHTML = `<span style="color:#fbbf24">${statusIcon('warn', 14)} ${t('assistant.qtcoolEnterKey')}</span>`; return }
 
     // 1) 填充助手配置
     overlay.querySelector('#ast-baseurl').value = QTCOOL.baseUrl
     overlay.querySelector('#ast-apikey').value = key
     overlay.querySelector('#ast-model').value = selectedModel
     overlay.querySelector('#ast-apitype').value = 'openai-completions'
-    qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} 助手已配置为 ${selectedModel}</span>`
-    toast('助手已配置为 ' + selectedModel, 'success')
+    qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} ${t('assistant.qtcoolConfigured', { model: selectedModel })}</span>`
+    toast(t('assistant.qtcoolConfigured', { model: selectedModel }), 'success')
 
     // 2) 提示是否同步写入 OpenClaw 配置（设为主模型）
     const yes = await showConfirm(
-      '同步到 OpenClaw？',
-      `是否将 qtcool/${selectedModel} 设为 OpenClaw 主模型？\n\n这将添加晴辰云为模型服务商，并设置 ${selectedModel} 为全局主模型。`,
-      { confirmText: '设为主模型', cancelText: '仅配置助手' }
+      t('assistant.qtcoolSyncTitle'),
+      t('assistant.qtcoolSyncDesc', { model: selectedModel }),
+      { confirmText: t('assistant.qtcoolSetMain'), cancelText: t('assistant.qtcoolAssistantOnly') }
     )
     if (yes) {
       try {
@@ -3057,16 +3058,16 @@ function showSettings() {
         config.agents.defaults.model.primary = 'qtcool/' + selectedModel
 
         await api.writeOpenclawConfig(config)
-        qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} 已设为主模型 qtcool/${selectedModel}，正在重启 Gateway...</span>`
+        qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} ${t('assistant.qtcoolSetMainDone', { model: selectedModel })}</span>`
         try {
           await api.restartGateway()
-          toast('OpenClaw 主模型已切换为 qtcool/' + selectedModel, 'success')
-          qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} 全部完成！主模型：qtcool/${selectedModel}</span>`
+          toast(t('assistant.qtcoolMainSwitched', { model: selectedModel }), 'success')
+          qtcoolStatus.innerHTML = `<span style="color:#34d399">${statusIcon('ok', 14)} ${t('assistant.qtcoolAllDone', { model: selectedModel })}</span>`
         } catch (e) {
-          toast('配置已保存，Gateway 重启失败: ' + e.message, 'warning')
+          toast(t('assistant.qtcoolGatewayFail') + ': ' + e.message, 'warning')
         }
       } catch (e) {
-        toast('写入 OpenClaw 配置失败: ' + e, 'error')
+        toast(t('assistant.qtcoolWriteFail') + ': ' + e, 'error')
       }
     }
   }
@@ -3077,13 +3078,13 @@ function showSettings() {
     const apiKey = overlay.querySelector('#ast-apikey').value.trim()
     const model = overlay.querySelector('#ast-model').value.trim()
     if (!baseUrl || !apiKey || !model) {
-      toast('请先在上方配置好 Base URL、API Key 和模型', 'warning')
+      toast(t('assistant.qtcoolFillFirst'), 'warning')
       return
     }
     const yes = await showConfirm(
-      '同步到 OpenClaw',
-      `将当前助手的模型配置写入 OpenClaw 全局：\n\n• 服务商：晴辰云（qtcool）\n• 模型：${model}\n• 设为全局主模型\n\n此操作会覆盖已有的晴辰云服务商配置并重启 Gateway。`,
-      { confirmText: '确认同步', cancelText: '取消' }
+      t('assistant.qtcoolSyncTo'),
+      t('assistant.qtcoolSyncToDesc', { model }),
+      { confirmText: t('assistant.qtcoolConfirmSync'), cancelText: t('common.cancel') }
     )
     if (!yes) return
     try {
@@ -3102,10 +3103,10 @@ function showSettings() {
       if (!config.agents.defaults.model) config.agents.defaults.model = {}
       config.agents.defaults.model.primary = 'qtcool/' + model
       await api.writeOpenclawConfig(config)
-      toast('已同步到 OpenClaw 全局配置，主模型: qtcool/' + model, 'success')
+      toast(t('assistant.qtcoolSyncToDone', { model }), 'success')
       try { await api.restartGateway() } catch {}
     } catch (e) {
-      toast('同步失败: ' + e, 'error')
+      toast(t('assistant.qtcoolSyncFail') + ': ' + e, 'error')
     }
   })
 
@@ -3115,7 +3116,7 @@ function showSettings() {
       const config = await api.readOpenclawConfig()
       const qtProvider = config?.models?.providers?.qtcool
       if (!qtProvider?.baseUrl) {
-        toast('OpenClaw 中尚未配置晴辰云服务商，请先在模型配置页添加', 'info')
+        toast(t('assistant.qtcoolNoProvider'), 'info')
         return
       }
       const primary = config?.agents?.defaults?.model?.primary || ''
@@ -3123,9 +3124,9 @@ function showSettings() {
       const firstModel = (qtProvider.models || [])[0]
       const modelId = primaryModel || (typeof firstModel === 'string' ? firstModel : firstModel?.id) || ''
       const yes = await showConfirm(
-        '从 OpenClaw 读取',
-        `将 OpenClaw 全局配置填入助手：\n\n• Base URL：${qtProvider.baseUrl}\n• API Key：${qtProvider.apiKey ? '****' + qtProvider.apiKey.slice(-6) : '（空）'}\n${modelId ? '• 模型：' + modelId : ''}\n\n这会覆盖当前助手的模型配置。`,
-        { confirmText: '确认读取', cancelText: '取消' }
+        t('assistant.qtcoolSyncFrom'),
+        t('assistant.qtcoolSyncFromDesc', { baseUrl: qtProvider.baseUrl, apiKey: qtProvider.apiKey ? '****' + qtProvider.apiKey.slice(-6) : '(—)', model: modelId }),
+        { confirmText: t('assistant.qtcoolConfirmRead'), cancelText: t('common.cancel') }
       )
       if (!yes) return
       overlay.querySelector('#ast-baseurl').value = qtProvider.baseUrl
@@ -3135,9 +3136,9 @@ function showSettings() {
       }
       overlay.querySelector('#ast-apitype').value = qtProvider.api || 'openai-completions'
       if (modelId) overlay.querySelector('#ast-model').value = modelId
-      toast('已从 OpenClaw 读取配置', 'success')
+      toast(t('assistant.qtcoolSyncFromDone'), 'success')
     } catch (e) {
-      toast('读取 OpenClaw 配置失败: ' + e, 'error')
+      toast(t('assistant.qtcoolReadFail') + ': ' + e, 'error')
     }
   })
 
@@ -3153,16 +3154,16 @@ function showSettings() {
     const model = overlay.querySelector('#ast-model').value.trim()
     const selApiType = normalizeApiType(overlay.querySelector('#ast-apitype').value || 'openai-completions')
     if (!baseUrl || (requiresApiKey(selApiType) && !apiKey)) {
-      resultEl.innerHTML = '<span style="color:var(--warning)">' + escHtml(requiresApiKey(selApiType) ? '请先填写 Base URL 和 API Key' : '请先填写 Base URL') + '</span>'
+      resultEl.innerHTML = '<span style="color:var(--warning)">' + escHtml(requiresApiKey(selApiType) ? t('assistant.testFillUrlKey') : t('assistant.testFillUrl')) + '</span>'
       return
     }
     if (!model) {
-      resultEl.innerHTML = '<span style="color:var(--warning)">请先填写或选择模型</span>'
+      resultEl.innerHTML = '<span style="color:var(--warning)">' + t('assistant.testFillModel') + '</span>'
       return
     }
     btn.disabled = true
-    btn.textContent = '测试中...'
-    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">正在发送测试消息...</span>'
+    btn.textContent = t('assistant.testing')
+    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">' + t('assistant.testSending') + '</span>'
     const base = cleanBaseUrl(baseUrl, selApiType)
     const hdrs = authHeaders(selApiType, apiKey)
     const t0 = Date.now()
@@ -3209,7 +3210,7 @@ function showSettings() {
             const data = JSON.parse(respBody)
             const msg = data.choices?.[0]?.message
             reply = msg?.content || msg?.reasoning_content || data.choices?.[0]?.text || data.output?.text || ''
-            if (!msg?.content && msg?.reasoning_content) reply = '[推理内容] ' + reply
+            if (!msg?.content && msg?.reasoning_content) reply = '[reasoning] ' + reply
           } catch {}
         }
 
@@ -3223,18 +3224,18 @@ function showSettings() {
             try { const d = JSON.parse(respBody); reply = d.output_text || d.output?.[0]?.content?.[0]?.text || '' } catch {}
           } catch (err2) {
             resultEl.innerHTML = buildTestResult({ success: false, elapsed: Date.now() - t0, usedApi, reqUrl, reqBody, respStatus: 0, respBody: '', error: err2.message })
-            btn.disabled = false; btn.textContent = '测试'; return
+            btn.disabled = false; btn.textContent = t('assistant.testBtn'); return
           }
         }
       }
     } catch (err) {
       resultEl.innerHTML = buildTestResult({ success: false, elapsed: Date.now() - t0, usedApi, reqUrl, reqBody, respStatus: 0, respBody: '', error: err.message })
-      btn.disabled = false; btn.textContent = '测试'; return
+      btn.disabled = false; btn.textContent = t('assistant.testBtn'); return
     }
 
     resultEl.innerHTML = buildTestResult({ success: !!reply, elapsed: Date.now() - t0, usedApi, reqUrl, reqBody, respStatus, respBody, reply })
     btn.disabled = false
-    btn.textContent = '测试'
+    btn.textContent = t('assistant.testBtn')
   }
 
   // 获取模型列表
@@ -3244,12 +3245,12 @@ function showSettings() {
     const apiKey = overlay.querySelector('#ast-apikey').value.trim()
     const selApiType = normalizeApiType(overlay.querySelector('#ast-apitype').value || 'openai-completions')
     if (!baseUrl || (requiresApiKey(selApiType) && !apiKey)) {
-      resultEl.innerHTML = '<span style="color:var(--warning)">' + escHtml(requiresApiKey(selApiType) ? '请先填写 Base URL 和 API Key' : '请先填写 Base URL') + '</span>'
+      resultEl.innerHTML = '<span style="color:var(--warning)">' + escHtml(requiresApiKey(selApiType) ? t('assistant.testFillUrlKey') : t('assistant.testFillUrl')) + '</span>'
       return
     }
     btn.disabled = true
-    btn.textContent = '获取中...'
-    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">正在获取模型列表...</span>'
+    btn.textContent = t('assistant.fetching')
+    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">' + t('assistant.fetchingModels') + '</span>'
     try {
       const base = cleanBaseUrl(baseUrl, selApiType)
       const hdrs = authHeaders(selApiType, apiKey)
@@ -3294,10 +3295,10 @@ function showSettings() {
       }
 
       if (models.length === 0) {
-        resultEl.innerHTML = '<span style="color:var(--warning)">未发现可用模型</span>'
+        resultEl.innerHTML = '<span style="color:var(--warning)">' + t('assistant.noModelsFound') + '</span>'
         return
       }
-      resultEl.innerHTML = '<span style="color:var(--success)">✓ 发现 ' + models.length + ' 个模型，点击下方列表选择</span>'
+      resultEl.innerHTML = '<span style="color:var(--success)">✓ ' + t('assistant.modelsFound', { count: models.length }) + '</span>'
       dropdown.innerHTML = models.map(m =>
         '<div class="ast-model-option" data-model="' + escHtml(m) + '">' + escHtml(m) + '</div>'
       ).join('')
@@ -3306,7 +3307,7 @@ function showSettings() {
       resultEl.innerHTML = '<span style="color:var(--error)">✗ ' + escHtml(err.message) + '</span>'
     } finally {
       btn.disabled = false
-      btn.textContent = '拉取'
+      btn.textContent = t('assistant.fetchBtn')
     }
   }
 
@@ -3314,13 +3315,13 @@ function showSettings() {
   overlay.querySelector('#ast-btn-import').onclick = async (e) => {
     const btn = e.target
     btn.disabled = true
-    btn.textContent = '扫描中...'
-    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">正在扫描 OpenClaw 模型配置...</span>'
+    btn.textContent = t('assistant.personaScanning')
+    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">' + t('assistant.importScanning') + '</span>'
 
     try {
       const sysInfo = await api.assistantSystemInfo()
       const home = sysInfo.match(/主目录[:：]\s*(.+)/)?.[1]?.trim() || sysInfo.match(/Home[:：]\s*(.+)/)?.[1]?.trim() || ''
-      if (!home) throw new Error('无法获取主目录路径')
+      if (!home) throw new Error('Cannot get home dir')
 
       const providers = []
 
@@ -3355,7 +3356,7 @@ function showSettings() {
         for (const [pid, p] of Object.entries(config.models?.providers || {})) {
           if (p.baseUrl && !providers.find(x => x.name === pid)) {
             providers.push({
-              source: '全局配置',
+              source: t('assistant.importGlobal'),
               name: pid,
               baseUrl: p.baseUrl,
               apiKey: p.apiKey || '',
@@ -3367,25 +3368,25 @@ function showSettings() {
       } catch {}
 
       if (providers.length === 0) {
-        resultEl.innerHTML = '<span style="color:var(--warning)">未发现 OpenClaw 模型配置。请先安装并配置 OpenClaw。</span>'
+        resultEl.innerHTML = '<span style="color:var(--warning)">' + t('assistant.importNoConfig') + '</span>'
         return
       }
 
       // 构建选择 UI
       const listHtml = providers.map((p, i) => {
-        const modelsStr = p.models.length ? p.models.join(', ') : '(无模型列表)'
+        const modelsStr = p.models.length ? p.models.join(', ') : '(' + t('assistant.importNoModels') + ')'
         return `<div class="ast-import-option" data-idx="${i}" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:background 0.15s">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <strong>${escHtml(p.name)}</strong>
             <span style="font-size:11px;color:var(--text-tertiary)">${escHtml(p.source)}</span>
           </div>
           <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${escHtml(p.baseUrl)}</div>
-          <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px">模型: ${escHtml(modelsStr)}</div>
+          <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px">${t('assistant.model')}: ${escHtml(modelsStr)}</div>
         </div>`
       }).join('')
 
       resultEl.innerHTML = `<div style="margin-top:4px">
-        <div style="font-size:12px;font-weight:600;margin-bottom:6px">检测到 ${providers.length} 个服务商，点击选择：</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">${t('assistant.importFound', { count: providers.length })}</div>
         ${listHtml}
       </div>`
 
@@ -3405,15 +3406,15 @@ function showSettings() {
               '<div class="ast-model-option" data-model="' + escHtml(m) + '">' + escHtml(m) + '</div>'
             ).join('')
           }
-          resultEl.innerHTML = '<span style="color:var(--success)">✓ 已导入「' + escHtml(p.name) + '」的配置' + (p.models.length ? '（' + p.models.length + ' 个模型）' : '') + '</span>'
+          resultEl.innerHTML = '<span style="color:var(--success)">✓ ' + t('assistant.importDone', { name: p.name, count: p.models.length }) + '</span>'
         })
       })
 
     } catch (err) {
-      resultEl.innerHTML = '<span style="color:var(--error)">导入失败: ' + escHtml(err.message || String(err)) + '</span>'
+      resultEl.innerHTML = '<span style="color:var(--error)">' + t('assistant.importFail') + ': ' + escHtml(err.message || String(err)) + '</span>'
     } finally {
       btn.disabled = false
-      btn.innerHTML = `${icon('download', 14)} 导入`
+      btn.innerHTML = `${icon('download', 14)} ${t('assistant.importBtn')}`
     }
   }
 
@@ -3480,7 +3481,7 @@ function showSettings() {
       titleEl.textContent = displayName
     }
     renderMessages()
-    toast('设置已保存', 'info')
+    toast(t('assistant.settingsSaved'), 'info')
     updateModelBadge()
   }
   overlay.addEventListener('keydown', (e) => {
@@ -3497,7 +3498,7 @@ function updateModelBadge() {
       badge.textContent = _config.model
       badge.className = 'ast-model-badge configured'
     } else {
-      badge.textContent = '未配置'
+      badge.textContent = t('assistant.notConfigured')
       badge.className = 'ast-model-badge unconfigured'
     }
   }
@@ -3510,7 +3511,7 @@ function sendMessage(text) {
   // 流式中 → 排队（图片不排队，提示用户）
   if (_isStreaming) {
     if (_pendingImages.length > 0) {
-      toast('AI 正在回复中，图片消息请等待完成后再发送', 'info')
+      toast(t('assistant.waitForReply'), 'info')
       return
     }
     enqueueMessage(text.trim())
@@ -3524,7 +3525,7 @@ async function sendMessageDirect(text) {
   const hasContent = text.trim() || _pendingImages.length > 0
   if (!hasContent) return
   if (_isStreaming) {
-    if (_pendingImages.length > 0) { toast('请等待 AI 回复完成', 'info'); return }
+    if (_pendingImages.length > 0) { toast(t('assistant.waitForReplyShort'), 'info'); return }
     enqueueMessage(text.trim())
     return
   }
@@ -3582,7 +3583,7 @@ async function sendMessageDirect(text) {
   renderMessages()
   const aiBubbles = _messagesEl?.querySelectorAll('.ast-msg-bubble-ai')
   const lastBubble = aiBubbles?.[aiBubbles.length - 1]
-  if (lastBubble) lastBubble.innerHTML = '<span class="ast-typing">思考中...</span>'
+  if (lastBubble) lastBubble.innerHTML = '<span class="ast-typing">' + t('assistant.aiThinking') + '</span>'
 
   const toolsEnabled = getEnabledTools().length > 0
 
@@ -3640,12 +3641,12 @@ async function sendMessageDirect(text) {
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      aiMsg.content += aiMsg.content ? '\n\n*[已停止]*' : '*[已停止]*'
+      aiMsg.content += aiMsg.content ? '\n\n*[' + t('assistant.stopped') + ']*' : '*[' + t('assistant.stopped') + ']*'
     } else {
       setSessionStatus(session.id, 'error')
       // 保留已有内容，追加错误信息和重试按钮
       const errInfo = aiMsg.content
-        ? `\n\n---\n**请求中断**: ${err.message}`
+        ? `\n\n---\n**${t('assistant.requestInterrupted')}**: ${err.message}`
         : err.message
       aiMsg.content += errInfo
       aiMsg._canRetry = true
@@ -3659,9 +3660,9 @@ async function sendMessageDirect(text) {
       const retrySvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>'
       const continueSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
       retryBar.innerHTML = `
-        <button class="btn btn-sm btn-primary ast-btn-retry">${retrySvg} 重试</button>
-        <button class="btn btn-sm btn-secondary ast-btn-continue">${continueSvg} 输入继续</button>
-        <span class="ast-retry-hint">请求失败（已自动重试 3 次）</span>
+        <button class="btn btn-sm btn-primary ast-btn-retry">${retrySvg} ${t('assistant.retry')}</button>
+        <button class="btn btn-sm btn-secondary ast-btn-continue">${continueSvg} ${t('assistant.continueInput')}</button>
+        <span class="ast-retry-hint">${t('assistant.retryHint')}</span>
       `
       _messagesEl.appendChild(retryBar)
       _messagesEl.scrollTop = _messagesEl.scrollHeight
@@ -3718,7 +3719,7 @@ async function retryAIResponse(session) {
   renderMessages()
   const aiBubbles = _messagesEl?.querySelectorAll('.ast-msg-bubble-ai')
   const lastBubble = aiBubbles?.[aiBubbles.length - 1]
-  if (lastBubble) lastBubble.innerHTML = '<span class="ast-typing">重试中...</span>'
+  if (lastBubble) lastBubble.innerHTML = '<span class="ast-typing">' + t('assistant.retrying') + '</span>'
 
   const toolsEnabled = getEnabledTools().length > 0
 
@@ -3759,11 +3760,11 @@ async function retryAIResponse(session) {
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      aiMsg.content += aiMsg.content ? '\n\n*[已停止]*' : '*[已停止]*'
+      aiMsg.content += aiMsg.content ? '\n\n*[' + t('assistant.stopped') + ']*' : '*[' + t('assistant.stopped') + ']*'
     } else {
       setSessionStatus(session.id, 'error')
       aiMsg.content += aiMsg.content
-        ? `\n\n---\n**请求中断**: ${err.message}`
+        ? `\n\n---\n**${t('assistant.requestInterrupted')}**: ${err.message}`
         : err.message
       aiMsg._canRetry = true
     }
@@ -3775,9 +3776,9 @@ async function retryAIResponse(session) {
       const retrySvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>'
       const continueSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
       retryBar.innerHTML = `
-        <button class="btn btn-sm btn-primary ast-btn-retry">${retrySvg} 重试</button>
-        <button class="btn btn-sm btn-secondary ast-btn-continue">${continueSvg} 输入继续</button>
-        <span class="ast-retry-hint">请求失败（已自动重试 3 次）</span>
+        <button class="btn btn-sm btn-primary ast-btn-retry">${retrySvg} ${t('assistant.retry')}</button>
+        <button class="btn btn-sm btn-secondary ast-btn-continue">${continueSvg} ${t('assistant.continueInput')}</button>
+        <span class="ast-retry-hint">${t('assistant.retryHint')}</span>
       `
       _messagesEl.appendChild(retryBar)
       _messagesEl.scrollTop = _messagesEl.scrollHeight
@@ -3838,11 +3839,11 @@ function showMsgContextMenu(e, msgIdx) {
   const menu = document.createElement('div')
   menu.className = 'ast-ctx-menu'
   menu.innerHTML = `
-    <button data-action="copy-text">复制文本</button>
-    <button data-action="copy-md">复制 Markdown</button>
+    <button data-action="copy-text">${t('assistant.copyText')}</button>
+    <button data-action="copy-md">${t('assistant.copyMd')}</button>
     <hr/>
-    <button data-action="view-raw">查看原始数据</button>
-    ${msg._debug ? '<button data-action="view-debug">查看请求/响应</button>' : ''}
+    <button data-action="view-raw">${t('assistant.viewRaw')}</button>
+    ${msg._debug ? '<button data-action="view-debug">' + t('assistant.viewDebug') + '</button>' : ''}
   `
   // 定位
   menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px'
@@ -3860,16 +3861,16 @@ function showMsgContextMenu(e, msgIdx) {
       : (msg._text || msg.content?.find?.(p => p.type === 'text')?.text || '')
 
     if (action === 'copy-text') {
-      navigator.clipboard.writeText(textContent).then(() => toast('已复制文本'))
+      navigator.clipboard.writeText(textContent).then(() => toast(t('assistant.copiedText')))
     } else if (action === 'copy-md') {
-      navigator.clipboard.writeText(msg.content || textContent).then(() => toast('已复制 Markdown'))
+      navigator.clipboard.writeText(msg.content || textContent).then(() => toast(t('assistant.copiedMd')))
     } else if (action === 'view-raw') {
       const raw = { role: msg.role, content: msg.content, ts: msg.ts }
       if (msg._images) raw._images = msg._images.map(i => ({ dbId: i.dbId, name: i.name, width: i.width, height: i.height }))
       if (msg.toolHistory) raw.toolHistory = msg.toolHistory
-      showDebugModal('消息原始数据', JSON.stringify(raw, null, 2))
+      showDebugModal(t('assistant.rawData'), JSON.stringify(raw, null, 2))
     } else if (action === 'view-debug' && msg._debug) {
-      showDebugModal('请求/响应调试', JSON.stringify(msg._debug, null, 2))
+      showDebugModal(t('assistant.debugInfo'), JSON.stringify(msg._debug, null, 2))
     }
   })
 
@@ -3891,14 +3892,14 @@ function showDebugModal(title, content) {
       </div>
       <pre class="ast-debug-content">${escHtml(content)}</pre>
       <div class="ast-debug-actions">
-        <button class="btn btn-sm btn-primary ast-debug-copy">复制</button>
+        <button class="btn btn-sm btn-primary ast-debug-copy">${t('common.copy')}</button>
       </div>
     </div>
   `
   document.body.appendChild(overlay)
   overlay.querySelector('.ast-debug-close').onclick = () => overlay.remove()
   overlay.querySelector('.ast-debug-copy').onclick = () => {
-    navigator.clipboard.writeText(content).then(() => toast('已复制'))
+    navigator.clipboard.writeText(content).then(() => toast(t('common.copied')))
   }
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove() })
 }
@@ -3909,10 +3910,10 @@ function getAssistantGuideHtml() {
   if (localStorage.getItem(AST_GUIDE_KEY)) return ''
   return `
     <div class="ast-page-guide" id="ast-page-guide">
-      <div class="ast-guide-badge">内置 AI</div>
+      <div class="ast-guide-badge">${t('assistant.guideTag')}</div>
       <div class="ast-guide-text">
-        <b>这是 ClawPanel 内置的 AI 助手</b>，独立于 OpenClaw，使用你在右上角「设置」中配置的 API。
-        <span style="opacity:0.6">如需与 OpenClaw Agent 对话，请前往「实时聊天」页面。</span>
+        <b>${t('assistant.guideTitle')}</b>${t('assistant.guideDesc')}
+        <span style="opacity:0.6">${t('assistant.guideHint')}</span>
       </div>
       <button class="ast-guide-close" onclick="localStorage.setItem('${AST_GUIDE_KEY}','1');this.closest('.ast-page-guide').remove()">&times;</button>
     </div>
@@ -3954,8 +3955,8 @@ export async function render() {
   page.innerHTML = `
     <div class="ast-sidebar" id="ast-sidebar">
       <div class="ast-sidebar-header">
-        <span>会话列表</span>
-        <button class="ast-sidebar-btn" id="ast-btn-new" title="新建会话">
+        <span>${t('assistant.sessionList')}</span>
+        <button class="ast-sidebar-btn" id="ast-btn-new" title="${t('assistant.newSession')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
@@ -3964,20 +3965,20 @@ export async function render() {
     <div class="ast-main">
       <div class="ast-header">
         <div class="ast-header-left">
-          <button class="ast-toggle-sidebar" id="ast-btn-toggle" title="会话列表">
+          <button class="ast-toggle-sidebar" id="ast-btn-toggle" title="${t('assistant.sessionList')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <span class="ast-title">${_config?.assistantName || DEFAULT_NAME}</span>
-          <span class="ast-model-badge ${_config.model ? 'configured' : 'unconfigured'}" id="ast-model-badge">${_config.model || '未配置'}</span>
+          <span class="ast-model-badge ${_config.model ? 'configured' : 'unconfigured'}" id="ast-model-badge">${_config.model || t('assistant.notConfigured')}</span>
         </div>
         <div class="ast-header-actions">
           <div class="ast-mode-selector" id="ast-mode-selector">
             <div class="ast-mode-slider" id="ast-mode-slider"></div>
             ${Object.entries(MODES).map(([key, m]) => `<button class="ast-mode-btn ${currentMode() === key ? 'active' : ''}" data-mode="${key}" title="${m.desc}">${MODE_ICONS[key]} ${m.label}</button>`).join('')}
           </div>
-          <button class="btn btn-sm btn-ghost" id="ast-btn-settings" title="模型设置">
+          <button class="btn btn-sm btn-ghost" id="ast-btn-settings" title="${t('assistant.settingsTitle')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-            设置
+            ${t('common.settings')}
           </button>
         </div>
       </div>
@@ -3986,14 +3987,14 @@ export async function render() {
       <div class="ast-input-area">
         <div class="ast-image-preview" id="ast-image-preview"></div>
         <div class="ast-input-wrap">
-          <button class="ast-attach-btn" id="ast-btn-attach" title="上传图片">
+          <button class="ast-attach-btn" id="ast-btn-attach" title="${t('assistant.uploadImage')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </button>
           <input type="file" id="ast-file-input" accept="image/*" multiple style="display:none"/>
-          <textarea class="ast-textarea" id="ast-textarea" placeholder="描述你的问题，粘贴日志、截图或错误信息..." rows="1"></textarea>
-          <button class="ast-send-btn" id="ast-send-btn" title="发送">${sendIcon()}</button>
+          <textarea class="ast-textarea" id="ast-textarea" placeholder="${t('assistant.inputPlaceholder')}" rows="1"></textarea>
+          <button class="ast-send-btn" id="ast-send-btn" title="${t('assistant.send')}">${sendIcon()}</button>
         </div>
-        <div class="ast-input-hint">Enter 发送 · Shift+Enter 换行 · 支持粘贴/拖拽图片 · AI 助手独立于 OpenClaw</div>
+        <div class="ast-input-hint">${t('assistant.inputHint')}</div>
       </div>
     </div>
   `
@@ -4211,7 +4212,7 @@ export async function render() {
     if (deleteBtn) {
       e.stopPropagation()
       const id = deleteBtn.dataset.delete
-      showConfirm('确定删除这个会话吗？').then(ok => {
+      showConfirm(t('assistant.confirmDeleteSession')).then(ok => {
         if (!ok) return
         deleteSession(id)
         renderSessionList()
@@ -4245,7 +4246,7 @@ export async function render() {
         _config.mode = 'execute'
         saveConfig()
         page.querySelectorAll('.ast-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'execute'))
-        toast('已自动切换到执行模式', 'info')
+        toast(t('assistant.autoSwitchExecute'), 'info')
       }
 
       sendMessage(skill.prompt)

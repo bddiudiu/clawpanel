@@ -7,6 +7,7 @@ import { toast } from '../components/toast.js'
 import { showModal, showConfirm } from '../components/modal.js'
 import { icon, statusIcon } from '../lib/icons.js'
 import { API_TYPES, PROVIDER_PRESETS, QTCOOL, MODEL_PRESETS, fetchQtcoolModels } from '../lib/model-presets.js'
+import { t } from '../lib/i18n.js'
 
 export async function render() {
   const page = document.createElement('div')
@@ -14,42 +15,41 @@ export async function render() {
 
   page.innerHTML = `
     <div class="page-header">
-      <h1 class="page-title">模型配置</h1>
-      <p class="page-desc">添加 AI 模型服务商，配置可用模型</p>
+      <h1 class="page-title">${t('models.title')}</h1>
+      <p class="page-desc">${t('models.desc')}</p>
     </div>
     <div class="config-actions">
-      <button class="btn btn-primary btn-sm" id="btn-add-provider">+ 添加服务商</button>
-      <button class="btn btn-secondary btn-sm" id="btn-undo" disabled>↩ 撤销</button>
+      <button class="btn btn-primary btn-sm" id="btn-add-provider">${t('models.addProvider')}</button>
+      <button class="btn btn-secondary btn-sm" id="btn-undo" disabled>${t('models.undo')}</button>
     </div>
     <div class="form-hint" style="margin-bottom:var(--space-md)">
-      服务商是模型的来源（如 OpenAI、DeepSeek 等）。每个服务商下可添加多个模型。
-      标记为「主模型」的将优先使用，其余作为备选自动切换。配置修改后自动保存。
+      ${t('models.providerHint')}
     </div>
     <div id="qtcool-promo" style="margin-bottom:var(--space-md);border-radius:var(--radius-lg);border:1px solid var(--border-primary);border-left:3px solid var(--primary);background:var(--bg-secondary);padding:16px 20px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:12px">
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span style="font-weight:700;font-size:var(--font-size-base);color:var(--text-primary)">${icon('zap', 15)} 晴辰云</span>
-            <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 7px;border-radius:8px">推荐</span>
+            <span style="font-weight:700;font-size:var(--font-size-base);color:var(--text-primary)">${icon('zap', 15)} ${t('models.qtcoolName')}</span>
+            <span style="font-size:10px;background:var(--primary);color:#fff;padding:1px 7px;border-radius:8px">${t('models.qtcoolRecommend')}</span>
           </div>
           <div style="font-size:var(--font-size-xs);color:var(--text-secondary);line-height:1.5">
-            GPT-5 / Codex 全系列，低至官方价 2-3 折，不满意随时可退。
-            <a href="${QTCOOL.site}" target="_blank" style="color:var(--primary);text-decoration:none">了解更多 →</a>
+            ${t('models.qtcoolDesc')}
+            <a href="${QTCOOL.site}" target="_blank" style="color:var(--primary);text-decoration:none">${t('models.qtcoolMore')}</a>
           </div>
         </div>
-        <a href="${QTCOOL.checkinUrl}" target="_blank" class="btn btn-primary btn-sm">${icon('gift', 12)} 每日签到领额度</a>
+        <a href="${QTCOOL.checkinUrl}" target="_blank" class="btn btn-primary btn-sm">${icon('gift', 12)} ${t('models.qtcoolCheckin')}</a>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input class="form-input" id="qtcool-apikey" placeholder="粘贴 API Key（签到后在用户后台获取）" style="font-size:12px;padding:6px 10px;flex:1;min-width:180px">
-        <button class="btn btn-primary btn-sm" id="btn-qtcool-oneclick">${icon('plus', 14)} 获取模型列表</button>
+        <input class="form-input" id="qtcool-apikey" placeholder="${t('models.qtcoolKeyPlaceholder')}" style="font-size:12px;padding:6px 10px;flex:1;min-width:180px">
+        <button class="btn btn-primary btn-sm" id="btn-qtcool-oneclick">${icon('plus', 14)} ${t('models.qtcoolFetchModels')}</button>
       </div>
       <div style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
-        没有密钥？前往 <a href="${QTCOOL.checkinUrl}" target="_blank" style="color:var(--primary)">签到页</a> 每日签到即可领取免费额度，在 <a href="${QTCOOL.usageUrl}" target="_blank" style="color:var(--primary)">用户后台</a> 复制你的 Key
+        ${t('models.qtcoolNoKey')} <a href="${QTCOOL.checkinUrl}" target="_blank" style="color:var(--primary)">${t('models.qtcoolCheckinPage')}</a> ${t('models.qtcoolCheckinHint')} <a href="${QTCOOL.usageUrl}" target="_blank" style="color:var(--primary)">${t('models.qtcoolDashboard')}</a> ${t('models.qtcoolCopyKey')}
       </div>
     </div>
     <div id="default-model-bar"></div>
     <div style="margin-bottom:var(--space-md)">
-      <input class="form-input" id="model-search" placeholder="搜索模型（按 ID 或名称过滤）" style="max-width:360px">
+      <input class="form-input" id="model-search" placeholder="${t('models.searchPlaceholder')}" style="max-width:360px">
     </div>
     <div id="providers-list">
       <div class="config-section"><div class="stat-card loading-placeholder" style="height:120px"></div></div>
@@ -82,13 +82,13 @@ async function loadConfig(page, state) {
     if (before !== after) {
       console.log('[models] 自动修复了服务商 baseUrl，正在保存...')
       await api.writeOpenclawConfig(state.config)
-      toast('已自动修复模型接口地址（如 Ollama /v1）', 'info')
+      toast(t('models.autoFixUrl'), 'info')
     }
     renderDefaultBar(page, state)
     renderProviders(page, state)
   } catch (e) {
-    listEl.innerHTML = '<div style="color:var(--error);padding:20px">加载配置失败: ' + e + '</div>'
-    toast('加载配置失败: ' + e, 'error')
+    listEl.innerHTML = '<div style="color:var(--error);padding:20px">' + t('models.configLoadFailed') + ': ' + e + '</div>'
+    toast(t('models.configLoadFailed') + ': ' + e, 'error')
   }
 }
 
@@ -109,7 +109,7 @@ function collectAllModels(config) {
 }
 
 function getApiTypeLabel(apiType) {
-  return API_TYPES.find(t => t.value === apiType)?.label || apiType || '未知'
+  return API_TYPES.find(at => at.value === apiType)?.label || apiType || t('common.unknown')
 }
 
 // 渲染当前主模型状态栏
@@ -121,18 +121,18 @@ function renderDefaultBar(page, state) {
 
   bar.innerHTML = `
     <div class="config-section" style="margin-bottom:var(--space-lg)">
-      <div class="config-section-title">当前生效配置</div>
+      <div class="config-section-title">${t('models.currentConfig')}</div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div>
-          <span style="font-size:var(--font-size-sm);color:var(--text-tertiary)">主模型：</span>
-          <span style="font-family:var(--font-mono);font-size:var(--font-size-sm);color:${primary ? 'var(--success)' : 'var(--error)'}">${primary || '未配置'}</span>
+          <span style="font-size:var(--font-size-sm);color:var(--text-tertiary)">${t('models.primaryModelLabel')}</span>
+          <span style="font-family:var(--font-mono);font-size:var(--font-size-sm);color:${primary ? 'var(--success)' : 'var(--error)'}">${primary || t('models.notConfigured')}</span>
         </div>
         <div>
-          <span style="font-size:var(--font-size-sm);color:var(--text-tertiary)">备选模型：</span>
-          <span style="font-size:var(--font-size-sm);color:var(--text-secondary)">${fallbacks.length ? fallbacks.join(', ') : '无'}</span>
+          <span style="font-size:var(--font-size-sm);color:var(--text-tertiary)">${t('models.fallbackModels')}</span>
+          <span style="font-size:var(--font-size-sm);color:var(--text-secondary)">${fallbacks.length ? fallbacks.join(', ') : t('models.fallbackNone')}</span>
         </div>
       </div>
-      <div class="form-hint" style="margin-top:6px">主模型不可用时，系统会自动切换到备选模型</div>
+      <div class="form-hint" style="margin-top:6px">${t('models.fallbackHint')}</div>
     </div>
   `
 }
@@ -201,7 +201,7 @@ function renderProviders(page, state) {
   if (!keys.length) {
     listEl.innerHTML = `
       <div style="color:var(--text-tertiary);padding:20px;text-align:center">
-        暂无服务商，点击「+ 添加服务商」开始配置
+        ${t('models.noProvider')}
       </div>`
     return
   }
@@ -225,37 +225,37 @@ function renderProviders(page, state) {
     return `
       <div class="config-section" data-provider="${key}">
         <div class="config-section-title" style="display:flex;justify-content:space-between;align-items:center">
-          <span style="cursor:pointer;user-select:none" data-action="toggle-provider"><span style="display:inline-block;width:16px;font-size:12px;color:var(--text-tertiary)">${chevron}</span>${key} <span style="font-size:var(--font-size-xs);color:var(--text-tertiary);font-weight:400">${getApiTypeLabel(p.api)} · ${models.length} 个模型</span></span>
+          <span style="cursor:pointer;user-select:none" data-action="toggle-provider"><span style="display:inline-block;width:16px;font-size:12px;color:var(--text-tertiary)">${chevron}</span>${key} <span style="font-size:var(--font-size-xs);color:var(--text-tertiary);font-weight:400">${getApiTypeLabel(p.api)} · ${t('models.nModels', { count: models.length })}</span></span>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-sm btn-secondary" data-action="edit-provider">编辑</button>
-            <button class="btn btn-sm btn-secondary" data-action="add-model">+ 模型</button>
-            <button class="btn btn-sm btn-secondary" data-action="fetch-models">获取列表</button>
-            <button class="btn btn-sm btn-danger" data-action="delete-provider">删除</button>
+            <button class="btn btn-sm btn-secondary" data-action="edit-provider">${t('models.editProvider')}</button>
+            <button class="btn btn-sm btn-secondary" data-action="add-model">${t('models.addModel')}</button>
+            <button class="btn btn-sm btn-secondary" data-action="fetch-models">${t('models.fetchList')}</button>
+            <button class="btn btn-sm btn-danger" data-action="delete-provider">${t('models.deleteProvider')}</button>
           </div>
         </div>
         <div class="provider-body" style="${collapsed ? 'display:none' : ''}">
         ${models.length >= 2 ? `
         <div style="display:flex;gap:6px;margin-bottom:var(--space-sm);align-items:center">
-          <button class="btn btn-sm btn-secondary" data-action="batch-test">批量测试</button>
-          <button class="btn btn-sm btn-secondary" data-action="select-all">全选</button>
-          <button class="btn btn-sm btn-danger" data-action="batch-delete">批量删除</button>
+          <button class="btn btn-sm btn-secondary" data-action="batch-test">${t('models.batchTest')}</button>
+          <button class="btn btn-sm btn-secondary" data-action="select-all">${t('models.selectAll')}</button>
+          <button class="btn btn-sm btn-danger" data-action="batch-delete">${t('models.batchDelete')}</button>
           <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-            <span style="font-size:var(--font-size-xs);color:var(--text-tertiary)">排序:</span>
+            <span style="font-size:var(--font-size-xs);color:var(--text-tertiary)">${t('models.sort')}</span>
             <select class="form-input" data-action="sort-models" style="padding:4px 8px;font-size:var(--font-size-xs);width:auto">
-              <option value="default">默认顺序 (拖拽调整)</option>
-              <option value="name-asc">名称 A-Z (固化到底层)</option>
-              <option value="name-desc">名称 Z-A (固化到底层)</option>
-              <option value="latency-asc">延迟 低→高 (固化到底层)</option>
-              <option value="latency-desc">延迟 高→低 (固化到底层)</option>
-              <option value="context-asc">上下文 小→大 (固化到底层)</option>
-              <option value="context-desc">上下文 大→小 (固化到底层)</option>
+              <option value="default">${t('models.sortDefault')}</option>
+              <option value="name-asc">${t('models.sortNameAsc')}</option>
+              <option value="name-desc">${t('models.sortNameDesc')}</option>
+              <option value="latency-asc">${t('models.sortLatencyAsc')}</option>
+              <option value="latency-desc">${t('models.sortLatencyDesc')}</option>
+              <option value="context-asc">${t('models.sortContextAsc')}</option>
+              <option value="context-desc">${t('models.sortContextDesc')}</option>
             </select>
-            <button class="btn btn-sm btn-secondary" data-action="apply-sort" style="display:none">保存当前排序</button>
+            <button class="btn btn-sm btn-secondary" data-action="apply-sort" style="display:none">${t('models.applySortBtn')}</button>
           </div>
         </div>` : ''}
         <div class="provider-models">
           ${renderModelCards(key, sorted, primary, search)}
-          ${hiddenCount > 0 ? `<div style="font-size:var(--font-size-xs);color:var(--text-tertiary);padding:4px 0">已隐藏 ${hiddenCount} 个不匹配的模型</div>` : ''}
+          ${hiddenCount > 0 ? `<div style="font-size:var(--font-size-xs);color:var(--text-tertiary);padding:4px 0">${t('models.hiddenModels', { count: hiddenCount })}</div>` : ''}
         </div>
         </div>
       </div>
@@ -269,7 +269,7 @@ function renderProviders(page, state) {
 // 渲染模型卡片（支持搜索高亮和批量选择 checkbox）
 function renderModelCards(providerKey, models, primary, search) {
   if (!models.length) {
-    return '<div style="color:var(--text-tertiary);font-size:var(--font-size-sm);padding:8px 0">暂无模型，点击「+ 模型」添加</div>'
+    return `<div style="color:var(--text-tertiary);font-size:var(--font-size-sm);padding:8px 0">${t('models.noModel')}</div>`
   }
   return models.map((m) => {
     const id = typeof m === 'string' ? m : m.id
@@ -280,11 +280,11 @@ function renderModelCards(providerKey, models, primary, search) {
     const bgColor = isPrimary ? 'var(--success-muted)' : 'var(--bg-tertiary)'
     const meta = []
     if (name !== id) meta.push(name)
-    if (m.contextWindow) meta.push((m.contextWindow / 1000) + 'K 上下文')
+    if (m.contextWindow) meta.push((m.contextWindow / 1000) + 'K ' + t('models.context'))
     // 测试状态标签：成功显示耗时，失败显示不可用
     let latencyTag = ''
     if (m.testStatus === 'fail') {
-      latencyTag = `<span style="font-size:var(--font-size-xs);padding:1px 6px;border-radius:var(--radius-sm);background:var(--error-muted, #fee2e2);color:var(--error)" title="${(m.testError || '').replace(/"/g, '&quot;')}">不可用</span>`
+      latencyTag = `<span style="font-size:var(--font-size-xs);padding:1px 6px;border-radius:var(--radius-sm);background:var(--error-muted, #fee2e2);color:var(--error)" title="${(m.testError || '').replace(/"/g, '&quot;')}">${t('models.unavailable')}</span>`
     } else if (m.latency != null) {
       const color = m.latency < 3000 ? 'success' : m.latency < 8000 ? 'warning' : 'error'
       const bg = color === 'success' ? 'var(--success-muted)' : color === 'warning' ? 'var(--warning-muted, #fef3c7)' : 'var(--error-muted, #fee2e2)'
@@ -301,17 +301,17 @@ function renderModelCards(providerKey, models, primary, search) {
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-family:var(--font-mono);font-size:var(--font-size-sm)">${id}</span>
-            ${isPrimary ? '<span style="font-size:var(--font-size-xs);background:var(--success);color:var(--text-inverse);padding:1px 6px;border-radius:var(--radius-sm)">主模型</span>' : ''}
-            ${m.reasoning ? '<span style="font-size:var(--font-size-xs);background:var(--accent-muted);color:var(--accent);padding:1px 6px;border-radius:var(--radius-sm)">推理</span>' : ''}
+            ${isPrimary ? `<span style="font-size:var(--font-size-xs);background:var(--success);color:var(--text-inverse);padding:1px 6px;border-radius:var(--radius-sm)">${t('models.primaryModel')}</span>` : ''}
+            ${m.reasoning ? `<span style="font-size:var(--font-size-xs);background:var(--accent-muted);color:var(--accent);padding:1px 6px;border-radius:var(--radius-sm)">${t('models.reasoning')}</span>` : ''}
             ${latencyTag}
           </div>
           <div style="font-size:var(--font-size-xs);color:var(--text-tertiary);margin-top:2px">${meta.join(' · ') || ''}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-sm btn-secondary" data-action="test-model">测试</button>
-          ${!isPrimary ? '<button class="btn btn-sm btn-secondary" data-action="set-primary">设为主模型</button>' : ''}
-          <button class="btn btn-sm btn-secondary" data-action="edit-model">编辑</button>
-          <button class="btn btn-sm btn-danger" data-action="delete-model">删除</button>
+          <button class="btn btn-sm btn-secondary" data-action="test-model">${t('models.testBtn')}</button>
+          ${!isPrimary ? `<button class="btn btn-sm btn-secondary" data-action="set-primary">${t('models.setPrimary')}</button>` : ''}
+          <button class="btn btn-sm btn-secondary" data-action="edit-model">${t('models.editModel')}</button>
+          <button class="btn btn-sm btn-danger" data-action="delete-model">${t('models.deleteModel')}</button>
         </div>
       </div>
     `
@@ -321,10 +321,10 @@ function renderModelCards(providerKey, models, primary, search) {
 // 格式化测试时间为相对时间
 function formatTestTime(ts) {
   const diff = Date.now() - ts
-  if (diff < 60000) return '刚刚测试'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前测试`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前测试`
-  return `${Math.floor(diff / 86400000)} 天前测试`
+  if (diff < 60000) return t('models.justTested')
+  if (diff < 3600000) return t('models.minAgoTest', { n: Math.floor(diff / 60000) })
+  if (diff < 86400000) return t('models.hourAgoTest', { n: Math.floor(diff / 3600000) })
+  return t('models.dayAgoTest', { n: Math.floor(diff / 86400000) })
 }
 
 // 根据 model-id 找到原始 index
@@ -348,7 +348,7 @@ async function undo(page, state) {
   renderDefaultBar(page, state)
   updateUndoBtn(page, state)
   await doAutoSave(state)
-  toast('已撤销', 'info')
+  toast(t('models.undone'), 'info')
 }
 
 // 自动保存（防抖 300ms）
@@ -419,7 +419,7 @@ async function saveConfigOnly(state) {
     normalizeProviderUrls(state.config)
     await api.writeOpenclawConfig(state.config)
   } catch (e) {
-    toast('保存失败: ' + e, 'error')
+    toast(t('models.saveFailed') + ': ' + e, 'error')
   }
 }
 
@@ -431,29 +431,29 @@ async function doAutoSave(state) {
     await api.writeOpenclawConfig(state.config)
 
     // 重启 Gateway 使配置生效（Gateway 不支持 SIGHUP 热重载）
-    toast('配置已保存，正在重启 Gateway...', 'info')
+    toast(t('models.configSavedRestarting'), 'info')
     try {
       await api.restartGateway()
-      toast('配置已生效，Gateway 已重启', 'success')
+      toast(t('models.configEffective'), 'success')
     } catch (e) {
       // 重启失败时提供手动重试按钮
       const restartBtn = document.createElement('button')
       restartBtn.className = 'btn btn-sm btn-primary'
-      restartBtn.textContent = '重试'
+      restartBtn.textContent = t('models.retryRestart')
       restartBtn.style.marginLeft = '8px'
       restartBtn.onclick = async () => {
         try {
-          toast('正在重启 Gateway...', 'info')
+          toast(t('models.restarting'), 'info')
           await api.restartGateway()
-          toast('Gateway 重启成功', 'success')
+          toast(t('models.restartOk'), 'success')
         } catch (e2) {
-          toast('重启失败: ' + e2.message, 'error')
+          toast(t('models.restartFailed') + ': ' + e2.message, 'error')
         }
       }
-      toast('配置已保存，但 Gateway 重启失败: ' + e.message, 'warning', { action: restartBtn })
+      toast(t('models.configSavedGwFailed') + ': ' + e.message, 'warning', { action: restartBtn })
     }
   } catch (e) {
-    toast('自动保存失败: ' + e, 'error')
+    toast(t('models.autoSaveFailed') + ': ' + e, 'error')
   }
 }
 
@@ -463,7 +463,7 @@ function updateUndoBtn(page, state) {
   if (!btn) return
   const n = state.undoStack.length
   btn.disabled = !n
-  btn.textContent = n ? `↩ 撤销 (${n})` : '↩ 撤销'
+  btn.textContent = n ? t('models.undoN', { n }) : t('models.undo')
 }
 
 // 渲染完成后，直接给每个 [data-action] 按钮绑定 onclick
@@ -488,7 +488,7 @@ function bindProviderButtons(listEl, page, state) {
         state.sortBy = 'default'
         renderProviders(page, state)
         autoSave(state)
-        toast('排序已保存', 'success')
+        toast(t('models.sortSaved'), 'success')
       }
     }
   })
@@ -636,7 +636,7 @@ async function handleAction(action, btn, card, section, providerKey, provider, p
       fetchRemoteModels(btn, page, state, providerKey)
       break
     case 'delete-provider': {
-      const yes = await showConfirm(`确定删除「${providerKey}」及其所有模型？`)
+      const yes = await showConfirm(t('models.confirmDeleteProvider', { name: providerKey }))
       if (!yes) return
       pushUndo(state)
       delete state.config.models.providers[providerKey]
@@ -644,7 +644,7 @@ async function handleAction(action, btn, card, section, providerKey, provider, p
       renderDefaultBar(page, state)
       updateUndoBtn(page, state)
       autoSave(state)
-      toast(`已删除 ${providerKey}`, 'info')
+      toast(t('models.providerDeleted', { name: providerKey }), 'info')
       break
     }
     case 'select-all':
@@ -659,7 +659,7 @@ async function handleAction(action, btn, card, section, providerKey, provider, p
     case 'delete-model': {
       if (!card) return
       const modelId = card.dataset.modelId
-      const yes = await showConfirm(`确定删除模型「${modelId}」？`)
+      const yes = await showConfirm(t('models.confirmDeleteModel', { name: modelId }))
       if (!yes) return
       pushUndo(state)
       const idx = findModelIdx(provider, modelId)
@@ -668,7 +668,7 @@ async function handleAction(action, btn, card, section, providerKey, provider, p
       renderDefaultBar(page, state)
       updateUndoBtn(page, state)
       autoSave(state)
-      toast(`已删除 ${modelId}`, 'info')
+      toast(t('models.modelDeleted', { name: modelId }), 'info')
       break
     }
     case 'edit-model': {
@@ -685,7 +685,7 @@ async function handleAction(action, btn, card, section, providerKey, provider, p
       renderDefaultBar(page, state)
       updateUndoBtn(page, state)
       autoSave(state)
-      toast('已设为主模型', 'success')
+      toast(t('models.setPrimaryDone'), 'success')
       break
     }
     case 'test-model': {
@@ -722,7 +722,7 @@ function ensureValidPrimary(state) {
     // primary 指向已删除的模型，自动切到第一个
     const newPrimary = allModels[0].full
     setPrimary(state, newPrimary)
-    toast(`主模型已自动切换为 ${newPrimary}`, 'info')
+    toast(t('models.primaryAutoSwitch', { model: newPrimary }), 'info')
   }
 }
 
@@ -759,22 +759,22 @@ function bindTopActions(page, state) {
 
   // 晴辰云：获取模型列表 → 弹窗让用户选择要添加的模型
   page.querySelector('#btn-qtcool-oneclick').onclick = async () => {
-    if (!state.config) { toast('配置未加载完成，请稍候', 'warning'); return }
+    if (!state.config) { toast(t('models.configNotReady'), 'warning'); return }
 
     const bannerKeyInput = page.querySelector('#qtcool-apikey')
     const bannerKey = bannerKeyInput ? bannerKeyInput.value.trim() : ''
 
     const btn = page.querySelector('#btn-qtcool-oneclick')
-    btn.textContent = '获取中...'
+    btn.textContent = t('models.qtcoolFetching')
     btn.disabled = true
 
     const models = await fetchQtcoolModels(bannerKey || undefined)
 
-    btn.innerHTML = `${icon('plus', 14)} 获取模型列表`
+    btn.innerHTML = `${icon('plus', 14)} ${t('models.qtcoolFetchModels')}`
     btn.disabled = false
 
     if (!models.length) {
-      toast('无法获取模型列表，请检查网络或稍后重试', 'error')
+      toast(t('models.fetchRemoteFailed'), 'error')
       return
     }
 
@@ -787,29 +787,29 @@ function bindTopActions(page, state) {
     overlay.className = 'modal-overlay'
     overlay.innerHTML = `
       <div class="modal" style="max-height:80vh;overflow-y:auto">
-        <div class="modal-title">选择要添加的模型</div>
-        <div class="form-hint" style="margin-bottom:12px">从晴辰云获取到 ${models.length} 个可用模型，勾选需要的模型后点击添加。</div>
+        <div class="modal-title">${t('models.qtcoolSelectTitle')}</div>
+        <div class="form-hint" style="margin-bottom:12px">${t('models.qtcoolSelectHint', { count: models.length })}</div>
         ${!existingProvider ? `<div style="margin-bottom:12px">
-          <label class="form-label" style="font-size:var(--font-size-xs)">API Key <a href="${QTCOOL.checkinUrl}" target="_blank" style="color:var(--primary);font-weight:400">每日签到领免费额度 →</a></label>
-          <input class="form-input" id="qtsel-apikey" placeholder="粘贴你的 API Key" style="font-size:12px">
+          <label class="form-label" style="font-size:var(--font-size-xs)">${t('models.qtcoolKeyLabel')} <a href="${QTCOOL.checkinUrl}" target="_blank" style="color:var(--primary);font-weight:400">${t('models.qtcoolKeyCheckinLink')}</a></label>
+          <input class="form-input" id="qtsel-apikey" placeholder="${t('models.qtcoolKeyPlaceholder2')}" style="font-size:12px">
         </div>` : ''}
         <div style="margin-bottom:12px;display:flex;gap:8px">
-          <button class="btn btn-sm btn-secondary" id="qtsel-all">全选</button>
-          <button class="btn btn-sm btn-secondary" id="qtsel-none">全不选</button>
+          <button class="btn btn-sm btn-secondary" id="qtsel-all">${t('models.selectAll')}</button>
+          <button class="btn btn-sm btn-secondary" id="qtsel-none">${t('models.selectNone')}</button>
         </div>
         <div id="qtmodel-list" style="display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow-y:auto;padding-right:4px">
           ${models.map(m => {
             const already = existingIds.has(m.id)
             return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-md);cursor:pointer;background:var(--bg-tertiary);opacity:${already ? '0.5' : '1'}">
-              <input type="checkbox" value="${m.id}" ${already ? 'disabled title="已添加"' : 'checked'} style="accent-color:var(--primary)">
+              <input type="checkbox" value="${m.id}" ${already ? `disabled title="${t('models.alreadyAdded')}"` : 'checked'} style="accent-color:var(--primary)">
               <span style="font-size:var(--font-size-sm);flex:1">${m.id}</span>
-              ${already ? '<span style="font-size:10px;color:var(--text-tertiary)">已有</span>' : ''}
+              ${already ? `<span style="font-size:10px;color:var(--text-tertiary)">${t('models.already')}</span>` : ''}
             </label>`
           }).join('')}
         </div>
         <div class="modal-actions" style="margin-top:16px">
-          <button class="btn btn-primary" id="qtsel-confirm">${icon('plus', 14)} 添加选中模型</button>
-          <button class="btn btn-secondary" id="qtsel-cancel">取消</button>
+          <button class="btn btn-primary" id="qtsel-confirm">${icon('plus', 14)} ${t('models.qtcoolAddSelected')}</button>
+          <button class="btn btn-secondary" id="qtsel-cancel">${t('common.cancel')}</button>
         </div>
       </div>
     `
@@ -826,13 +826,13 @@ function bindTopActions(page, state) {
     }
     overlay.querySelector('#qtsel-confirm').onclick = () => {
       const selected = [...overlay.querySelectorAll('#qtmodel-list input:checked:not(:disabled)')].map(cb => cb.value)
-      if (!selected.length) { toast('未选择任何模型', 'info'); return }
+      if (!selected.length) { toast(t('models.qtcoolNoneSelected'), 'info'); return }
 
       // 新建服务商时需要 API Key
       const keyInput = overlay.querySelector('#qtsel-apikey')
       const apiKey = keyInput ? keyInput.value.trim() : ''
       if (!existingProvider && !apiKey) {
-        toast('请输入 API Key（可通过每日签到免费获取）', 'warning')
+        toast(t('models.qtcoolNoKeyWarn'), 'warning')
         keyInput?.focus()
         return
       }
@@ -848,7 +848,7 @@ function bindTopActions(page, state) {
         for (const m of selectedModels) {
           if (!existingIds.has(m.id)) { existingProvider.models.push({ ...m }); added++ }
         }
-        toast(added ? `已添加 ${added} 个模型` : '所选模型均已存在', added ? 'success' : 'info')
+        toast(added ? t('models.qtcoolAdded', { count: added }) : t('models.qtcoolAllExist'), added ? 'success' : 'info')
       } else {
         state.config.models.providers[QTCOOL.providerKey] = {
           baseUrl: QTCOOL.baseUrl,
@@ -862,7 +862,7 @@ function bindTopActions(page, state) {
           if (!state.config.agents.defaults.model) state.config.agents.defaults.model = {}
           state.config.agents.defaults.model.primary = QTCOOL.providerKey + '/' + selectedModels[0].id
         }
-        toast(`已添加晴辰云（${selectedModels.length} 个模型）`, 'success')
+        toast(t('models.qtcoolProviderAdded', { count: selectedModels.length }), 'success')
       }
       renderProviders(page, state)
       renderDefaultBar(page, state)
@@ -883,38 +883,38 @@ function addProvider(page, state) {
   overlay.className = 'modal-overlay'
   overlay.innerHTML = `
     <div class="modal" style="max-height:85vh;overflow-y:auto">
-      <div class="modal-title">添加服务商</div>
+      <div class="modal-title">${t('models.addProviderTitle')}</div>
       <div class="form-group">
-        <label class="form-label">快捷选择</label>
+        <label class="form-label">${t('models.quickSelect')}</label>
         <div style="display:flex;flex-wrap:wrap">${presetsHtml}</div>
-        <div class="form-hint">选择常用服务商自动填充，或手动填写下方信息</div>
+        <div class="form-hint">${t('models.quickSelectHint')}</div>
         <div id="preset-detail" style="display:none;margin-top:8px;padding:10px 14px;background:var(--bg-tertiary);border-radius:var(--radius-md);font-size:var(--font-size-sm)"></div>
       </div>
       <div class="form-group">
-        <label class="form-label">服务商名称</label>
-        <input class="form-input" data-name="key" placeholder="如 openai, newapi">
-        <div class="form-hint">自定义标识名，用于区分不同来源</div>
+        <label class="form-label">${t('models.providerName')}</label>
+        <input class="form-input" data-name="key" placeholder="${t('models.providerNamePlaceholder')}">
+        <div class="form-hint">${t('models.providerNameHint')}</div>
       </div>
       <div class="form-group">
-        <label class="form-label">接口地址</label>
-        <input class="form-input" data-name="baseUrl" placeholder="https://api.openai.com/v1">
-        <div class="form-hint">模型服务的 API 地址，通常以 /v1 结尾；Ollama 可直接填 http://127.0.0.1:11434</div>
+        <label class="form-label">${t('models.baseUrl')}</label>
+        <input class="form-input" data-name="baseUrl" placeholder="${t('models.baseUrlPlaceholder')}">
+        <div class="form-hint">${t('models.baseUrlHint')}</div>
       </div>
       <div class="form-group">
-        <label class="form-label">密钥 (API Key)</label>
-        <input class="form-input" data-name="apiKey" placeholder="sk-...">
-        <div class="form-hint">访问服务所需的密钥，留空表示无需认证</div>
+        <label class="form-label">${t('models.apiKey')}</label>
+        <input class="form-input" data-name="apiKey" placeholder="${t('models.apiKeyPlaceholder')}">
+        <div class="form-hint">${t('models.apiKeyHint')}</div>
       </div>
       <div class="form-group">
-        <label class="form-label">接口类型</label>
+        <label class="form-label">${t('models.apiType')}</label>
         <select class="form-input" data-name="api">
-          ${API_TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join('')}
+          ${API_TYPES.map(at => `<option value="${at.value}">${at.label}</option>`).join('')}
         </select>
-        <div class="form-hint">大多数中转站和 Ollama 选「OpenAI 兼容」即可</div>
+        <div class="form-hint">${t('models.apiTypeHint')}</div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary btn-sm" data-action="cancel">取消</button>
-        <button class="btn btn-primary btn-sm" data-action="confirm">确定</button>
+        <button class="btn btn-secondary btn-sm" data-action="cancel">${t('common.cancel')}</button>
+        <button class="btn btn-primary btn-sm" data-action="confirm">${t('common.confirm')}</button>
       </div>
     </div>
   `
@@ -937,7 +937,7 @@ function addProvider(page, state) {
       if (detailEl) {
         if (preset.desc || preset.site) {
           let html = preset.desc ? `<div style="color:var(--text-secondary);line-height:1.6">${preset.desc}</div>` : ''
-          if (preset.site) html += `<a href="${preset.site}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:12px;margin-top:4px;display:inline-block">→ 访问 ${preset.label}官网</a>`
+          if (preset.site) html += `<a href="${preset.site}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:12px;margin-top:4px;display:inline-block">→ ${t('models.visitSite', { name: preset.label })}</a>`
           detailEl.innerHTML = html
           detailEl.style.display = 'block'
         } else {
@@ -955,7 +955,7 @@ function addProvider(page, state) {
     const baseUrl = overlay.querySelector('[data-name="baseUrl"]').value.trim()
     const apiKey = overlay.querySelector('[data-name="apiKey"]').value.trim()
     const apiType = overlay.querySelector('[data-name="api"]').value
-    if (!key) { toast('请填写服务商名称', 'warning'); return }
+    if (!key) { toast(t('models.providerNameRequired'), 'warning'); return }
     pushUndo(state)
     if (!state.config.models) state.config.models = { mode: 'replace', providers: {} }
     if (!state.config.models.providers) state.config.models.providers = {}
@@ -969,7 +969,7 @@ function addProvider(page, state) {
     renderProviders(page, state)
     updateUndoBtn(page, state)
     autoSave(state)
-    toast(`已添加服务商: ${key}`, 'success')
+    toast(t('models.providerAdded', { name: key }), 'success')
   }
 
   overlay.querySelector('[data-name="key"]')?.focus()
@@ -979,14 +979,14 @@ function addProvider(page, state) {
 function editProvider(page, state, providerKey) {
   const p = state.config.models.providers[providerKey]
   showModal({
-    title: `编辑服务商: ${providerKey}`,
+    title: t('models.editProviderTitle', { name: providerKey }),
     fields: [
-      { name: 'baseUrl', label: '接口地址', value: p.baseUrl || '', hint: '模型服务的 API 地址，通常以 /v1 结尾；Ollama 可直接填 http://127.0.0.1:11434' },
-      { name: 'apiKey', label: '密钥 (API Key)', value: p.apiKey || '', hint: '修改后自动保存生效' },
+      { name: 'baseUrl', label: t('models.baseUrl'), value: p.baseUrl || '', hint: t('models.baseUrlHint') },
+      { name: 'apiKey', label: t('models.apiKey'), value: p.apiKey || '', hint: t('models.apiKeyEditHint') },
       {
-        name: 'api', label: '接口类型', type: 'select', value: p.api || 'openai-completions',
+        name: 'api', label: t('models.apiType'), type: 'select', value: p.api || 'openai-completions',
         options: API_TYPES,
-        hint: '大多数中转站和 Ollama 选「OpenAI 兼容」即可',
+        hint: t('models.apiTypeHint'),
       },
     ],
     onConfirm: ({ baseUrl, apiKey, api: apiType }) => {
@@ -997,7 +997,7 @@ function editProvider(page, state, providerKey) {
       renderProviders(page, state)
       updateUndoBtn(page, state)
       autoSave(state)
-      toast('服务商已更新', 'success')
+      toast(t('models.providerUpdated'), 'success')
     },
   })
 }
@@ -1012,10 +1012,10 @@ function addModel(page, state, providerKey) {
   const available = presets.filter(p => !existingIds.includes(p.id))
 
   const fields = [
-    { name: 'id', label: '模型 ID', placeholder: '如 gpt-4o', hint: '必须与服务商支持的模型名一致' },
-    { name: 'name', label: '显示名称（选填）', placeholder: '如 GPT-4o', hint: '方便识别的友好名称' },
-    { name: 'contextWindow', label: '上下文长度（选填）', placeholder: '如 128000', hint: '模型支持的最大 Token 数' },
-    { name: 'reasoning', label: '这是推理模型（如 o3、R1、QwQ 等）', type: 'checkbox', value: false, hint: '推理模型会使用特殊的调用方式' },
+    { name: 'id', label: t('models.modelId'), placeholder: t('models.modelIdPlaceholder'), hint: t('models.modelIdHint') },
+    { name: 'name', label: t('models.displayName'), placeholder: t('models.displayNamePlaceholder'), hint: t('models.displayNameHint') },
+    { name: 'contextWindow', label: t('models.contextLength'), placeholder: t('models.contextLengthPlaceholder'), hint: t('models.contextLengthHint') },
+    { name: 'reasoning', label: t('models.isReasoning'), type: 'checkbox', value: false, hint: t('models.reasoningHint') },
   ]
 
   if (available.length) {
@@ -1024,25 +1024,25 @@ function addModel(page, state, providerKey) {
     overlay.className = 'modal-overlay'
 
     const presetBtns = available.map(p =>
-      `<button class="btn btn-sm btn-secondary preset-btn" data-mid="${p.id}" style="margin:0 6px 6px 0">${p.name}${p.reasoning ? ' (推理)' : ''}</button>`
+      `<button class="btn btn-sm btn-secondary preset-btn" data-mid="${p.id}" style="margin:0 6px 6px 0">${p.name}${p.reasoning ? ` (${t('models.reasoning')})` : ''}</button>`
     ).join('')
 
     overlay.innerHTML = `
       <div class="modal">
-        <div class="modal-title">添加模型到 ${providerKey}</div>
+        <div class="modal-title">${t('models.addModelTitle', { provider: providerKey })}</div>
         <div class="form-group">
-          <label class="form-label">快捷添加</label>
+          <label class="form-label">${t('models.quickAdd')}</label>
           <div style="display:flex;flex-wrap:wrap">${presetBtns}</div>
-          <div class="form-hint">点击直接添加常用模型，或手动填写下方信息</div>
+          <div class="form-hint">${t('models.quickAddHint')}</div>
         </div>
         <hr style="border:none;border-top:1px solid var(--border-primary);margin:var(--space-sm) 0">
         <div class="form-group">
-          <label class="form-label">手动添加</label>
+          <label class="form-label">${t('models.manualAdd')}</label>
         </div>
         ${buildFieldsHtml(fields)}
         <div class="modal-actions">
-          <button class="btn btn-secondary btn-sm" data-action="cancel">取消</button>
-          <button class="btn btn-primary btn-sm" data-action="confirm">确定</button>
+          <button class="btn btn-secondary btn-sm" data-action="cancel">${t('common.cancel')}</button>
+          <button class="btn btn-primary btn-sm" data-action="confirm">${t('common.confirm')}</button>
         </div>
       </div>
     `
@@ -1070,13 +1070,13 @@ function addModel(page, state, providerKey) {
         renderDefaultBar(page, state)
         updateUndoBtn(page, state)
         autoSave(state)
-        toast(`已添加模型: ${preset.name}`, 'success')
+        toast(t('models.modelAdded', { name: preset.name }), 'success')
       }
     })
   } else {
     // 无预设，直接弹普通 modal
     showModal({
-      title: `添加模型到 ${providerKey}`,
+      title: t('models.addModelTitle', { provider: providerKey }),
       fields,
       onConfirm: (vals) => {
         pushUndo(state)
@@ -1128,7 +1128,7 @@ function bindModalEvents(overlay, fields, onConfirm) {
 
 // 实际添加模型到 state
 function doAddModel(state, providerKey, vals) {
-  if (!vals.id) { toast('请填写模型 ID', 'warning'); return }
+  if (!vals.id) { toast(t('models.modelIdRequired'), 'warning'); return }
   const model = {
     id: vals.id.trim(),
     name: vals.name?.trim() || vals.id.trim(),
@@ -1137,19 +1137,19 @@ function doAddModel(state, providerKey, vals) {
   }
   if (vals.contextWindow) model.contextWindow = parseInt(vals.contextWindow) || 0
   state.config.models.providers[providerKey].models.push(model)
-  toast(`已添加模型: ${model.name}`, 'success')
+  toast(t('models.modelAdded', { name: model.name }), 'success')
 }
 
 // 编辑模型
 function editModel(page, state, providerKey, idx) {
   const m = state.config.models.providers[providerKey].models[idx]
   showModal({
-    title: `编辑模型: ${m.id}`,
+    title: t('models.editModelTitle', { name: m.id }),
     fields: [
-      { name: 'id', label: '模型 ID', value: m.id || '', hint: '必须与服务商支持的模型名一致' },
-      { name: 'name', label: '显示名称', value: m.name || '', hint: '方便识别的友好名称' },
-      { name: 'contextWindow', label: '上下文长度', value: String(m.contextWindow || ''), hint: '模型支持的最大 Token 数' },
-      { name: 'reasoning', label: '这是推理模型', type: 'checkbox', value: !!m.reasoning, hint: '推理模型会使用特殊的调用方式' },
+      { name: 'id', label: t('models.modelId'), value: m.id || '', hint: t('models.modelIdHint') },
+      { name: 'name', label: t('models.displayNameLabel'), value: m.name || '', hint: t('models.displayNameHint') },
+      { name: 'contextWindow', label: t('models.contextLengthLabel'), value: String(m.contextWindow || ''), hint: t('models.contextLengthHint') },
+      { name: 'reasoning', label: t('models.isReasoningLabel'), type: 'checkbox', value: !!m.reasoning, hint: t('models.reasoningHint') },
     ],
     onConfirm: (vals) => {
       if (!vals.id) return
@@ -1162,7 +1162,7 @@ function editModel(page, state, providerKey, idx) {
       renderDefaultBar(page, state)
       updateUndoBtn(page, state)
       autoSave(state)
-      toast('模型已更新', 'success')
+      toast(t('models.modelUpdated'), 'success')
     },
   })
 }
@@ -1180,9 +1180,9 @@ function handleSelectAll(section) {
 // 批量删除选中的模型
 async function handleBatchDelete(section, page, state, providerKey) {
   const checked = [...section.querySelectorAll('.model-checkbox:checked')]
-  if (!checked.length) { toast('请先勾选要删除的模型', 'warning'); return }
+  if (!checked.length) { toast(t('models.batchSelectHint'), 'warning'); return }
   const ids = checked.map(cb => cb.dataset.modelId)
-  const yes = await showConfirm(`确定删除选中的 ${ids.length} 个模型？\n${ids.join(', ')}`)
+  const yes = await showConfirm(t('models.confirmBatchDelete', { count: ids.length, ids: ids.join(', ') }))
   if (!yes) return
   pushUndo(state)
   const provider = state.config.models.providers[providerKey]
@@ -1194,7 +1194,7 @@ async function handleBatchDelete(section, page, state, providerKey) {
   renderDefaultBar(page, state)
   updateUndoBtn(page, state)
   autoSave(state)
-  toast(`已删除 ${ids.length} 个模型`, 'info')
+  toast(t('models.batchDeleted', { count: ids.length }), 'info')
 }
 
 // 批量测试：勾选的模型，没勾选则测试全部（记录耗时和状态）
@@ -1202,7 +1202,7 @@ async function handleBatchTest(section, state, providerKey) {
   // 如果正在测试，点击则终止
   if (_batchTestAbort) {
     _batchTestAbort.abort = true
-    toast('正在终止批量测试...', 'warning')
+    toast(t('models.stoppingBatchTest'), 'warning')
     return
   }
 
@@ -1212,13 +1212,13 @@ async function handleBatchTest(section, state, providerKey) {
     ? checked.map(cb => cb.dataset.modelId)
     : (provider.models || []).map(m => typeof m === 'string' ? m : m.id)
 
-  if (!ids.length) { toast('没有可测试的模型', 'warning'); return }
+  if (!ids.length) { toast(t('models.noTestModels'), 'warning'); return }
 
   const batchBtn = section.querySelector('[data-action="batch-test"]')
   const ctrl = { abort: false }
   _batchTestAbort = ctrl
   if (batchBtn) {
-    batchBtn.textContent = '终止测试'
+    batchBtn.textContent = t('models.stopBatchTest')
     batchBtn.classList.remove('btn-secondary')
     batchBtn.classList.add('btn-danger')
   }
@@ -1272,7 +1272,7 @@ async function handleBatchTest(section, state, providerKey) {
   const newSection = page?.querySelector(`[data-provider="${providerKey}"]`)
   const newBtn = newSection?.querySelector('[data-action="batch-test"]')
   if (newBtn) {
-    newBtn.textContent = '批量测试'
+    newBtn.textContent = t('models.batchTest')
     newBtn.classList.remove('btn-danger')
     newBtn.classList.add('btn-secondary')
   }
@@ -1280,9 +1280,9 @@ async function handleBatchTest(section, state, providerKey) {
   const aborted = ctrl.abort
   autoSave(state)
   if (aborted) {
-    toast(`批量测试已终止：${ok} 成功，${fail} 失败，${ids.length - ok - fail} 跳过`, 'warning')
+    toast(t('models.batchTestAborted', { ok, fail, skip: ids.length - ok - fail }), 'warning')
   } else {
-    toast(`批量测试完成：${ok} 成功，${fail} 失败`, ok === ids.length ? 'success' : 'warning')
+    toast(t('models.batchTestDone', { ok, fail }), ok === ids.length ? 'success' : 'warning')
   }
 }
 
@@ -1290,12 +1290,12 @@ async function handleBatchTest(section, state, providerKey) {
 async function fetchRemoteModels(btn, page, state, providerKey) {
   const provider = state.config.models.providers[providerKey]
   btn.disabled = true
-  btn.textContent = '获取中...'
+  btn.textContent = t('models.qtcoolFetching')
 
   try {
     const remoteIds = await api.listRemoteModels(provider.baseUrl, provider.apiKey || '', provider.api || 'openai-completions')
     btn.disabled = false
-    btn.textContent = '获取列表'
+    btn.textContent = t('models.fetchList')
 
     // 标记已添加的模型
     const existingIds = (provider.models || []).map(m => typeof m === 'string' ? m : m.id)
@@ -1305,16 +1305,16 @@ async function fetchRemoteModels(btn, page, state, providerKey) {
     overlay.className = 'modal-overlay'
     overlay.innerHTML = `
       <div class="modal" style="max-height:80vh;display:flex;flex-direction:column">
-        <div class="modal-title">远程模型列表 — ${providerKey} (${remoteIds.length} 个)</div>
+        <div class="modal-title">${t('models.remoteListTitle', { provider: providerKey, count: remoteIds.length })}</div>
         <div style="margin-bottom:var(--space-sm);display:flex;gap:8px;align-items:center">
-          <input class="form-input" id="remote-filter" placeholder="搜索模型..." style="flex:1">
-          <button class="btn btn-sm btn-secondary" id="remote-toggle-all">全选</button>
+          <input class="form-input" id="remote-filter" placeholder="${t('models.remoteSearch')}" style="flex:1">
+          <button class="btn btn-sm btn-secondary" id="remote-toggle-all">${t('models.selectAll')}</button>
         </div>
         <div id="remote-model-list" style="flex:1;overflow-y:auto;max-height:50vh"></div>
         <div class="modal-actions" style="margin-top:var(--space-sm)">
-          <span id="remote-selected-count" style="font-size:var(--font-size-xs);color:var(--text-tertiary);flex:1">已选 0 个</span>
-          <button class="btn btn-secondary btn-sm" data-action="cancel">取消</button>
-          <button class="btn btn-primary btn-sm" data-action="confirm">添加选中</button>
+          <span id="remote-selected-count" style="font-size:var(--font-size-xs);color:var(--text-tertiary);flex:1">${t('models.remoteSelected', { count: 0 })}</span>
+          <button class="btn btn-secondary btn-sm" data-action="cancel">${t('common.cancel')}</button>
+          <button class="btn btn-primary btn-sm" data-action="confirm">${t('models.addSelected')}</button>
         </div>
       </div>
     `
@@ -1334,7 +1334,7 @@ async function fetchRemoteModels(btn, page, state, providerKey) {
           <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer;${exists ? 'opacity:0.5' : ''}">
             <input type="checkbox" class="remote-cb" data-id="${id}" ${exists ? 'disabled' : ''}>
             <span style="font-family:var(--font-mono);font-size:var(--font-size-sm)">${id}</span>
-            ${exists ? '<span style="font-size:var(--font-size-xs);color:var(--text-tertiary)">(已添加)</span>' : ''}
+            ${exists ? `<span style="font-size:var(--font-size-xs);color:var(--text-tertiary)">(${t('models.alreadyAdded')})</span>` : ''}
           </label>`
       }).join('')
       updateCount()
@@ -1342,7 +1342,7 @@ async function fetchRemoteModels(btn, page, state, providerKey) {
 
     function updateCount() {
       const n = listEl.querySelectorAll('.remote-cb:checked').length
-      countEl.textContent = `已选 ${n} 个`
+      countEl.textContent = t('models.remoteSelected', { count: n })
     }
 
     renderRemoteList('')
@@ -1360,7 +1360,7 @@ async function fetchRemoteModels(btn, page, state, providerKey) {
     overlay.querySelector('[data-action="cancel"]').onclick = () => overlay.remove()
     overlay.querySelector('[data-action="confirm"]').onclick = () => {
       const selected = [...listEl.querySelectorAll('.remote-cb:checked')].map(cb => cb.dataset.id)
-      if (!selected.length) { toast('请至少选择一个模型', 'warning'); return }
+      if (!selected.length) { toast(t('models.selectAtLeast'), 'warning'); return }
       pushUndo(state)
       for (const id of selected) {
         provider.models.push({ id, input: ['text', 'image'] })
@@ -1370,14 +1370,14 @@ async function fetchRemoteModels(btn, page, state, providerKey) {
       renderDefaultBar(page, state)
       updateUndoBtn(page, state)
       autoSave(state)
-      toast(`已添加 ${selected.length} 个模型`, 'success')
+      toast(t('models.qtcoolAdded', { count: selected.length }), 'success')
     }
 
     filterInput.focus()
   } catch (e) {
     btn.disabled = false
-    btn.textContent = '获取列表'
-    toast(`获取模型列表失败: ${e}`, 'error')
+    btn.textContent = t('models.fetchList')
+    toast(t('models.fetchFailed', { error: e }), 'error')
   }
 }
 
@@ -1389,7 +1389,7 @@ async function testModel(btn, state, providerKey, idx) {
 
   btn.disabled = true
   const origText = btn.textContent
-  btn.textContent = '测试中...'
+  btn.textContent = t('models.testing')
 
   const start = Date.now()
   try {
@@ -1414,7 +1414,7 @@ async function testModel(btn, state, providerKey, idx) {
         toast(`${modelId} ${summary}`, 'warning', { duration: 6000 })
       }
     } else {
-      toast(`${modelId} 连通正常 (${(elapsed / 1000).toFixed(1)}s): "${reply.slice(0, 50)}"`, 'success')
+      toast(t('models.testOk', { model: modelId, time: (elapsed / 1000).toFixed(1), reply: reply.slice(0, 50) }), 'success')
     }
   } catch (e) {
     const elapsed = Date.now() - start
@@ -1424,7 +1424,7 @@ async function testModel(btn, state, providerKey, idx) {
       model.testStatus = 'fail'
       model.testError = String(e).slice(0, 200)
     }
-    toast(`${modelId} 不可用 (${(elapsed / 1000).toFixed(1)}s): ${e}`, 'error', { duration: 8000 })
+    toast(t('models.testFail', { model: modelId, time: (elapsed / 1000).toFixed(1), error: e }), 'error', { duration: 8000 })
   } finally {
     btn.disabled = false
     btn.textContent = origText

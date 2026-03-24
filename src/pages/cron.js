@@ -9,20 +9,23 @@ import { icon } from '../lib/icons.js'
 import { onGatewayChange } from '../lib/app-state.js'
 import { wsClient } from '../lib/ws-client.js'
 import { api, invalidate } from '../lib/tauri-api.js'
+import { t } from '../lib/i18n.js'
 
 let _unsub = null
 
 // ── Cron 表达式快捷预设 ──
 
-const CRON_SHORTCUTS = [
-  { expr: '*/5 * * * *', text: '每 5 分钟' },
-  { expr: '*/15 * * * *', text: '每 15 分钟' },
-  { expr: '0 * * * *', text: '每小时整点' },
-  { expr: '0 9 * * *', text: '每天 9:00' },
-  { expr: '0 18 * * *', text: '每天 18:00' },
-  { expr: '0 9 * * 1', text: '每周一 9:00' },
-  { expr: '0 9 1 * *', text: '每月 1 号 9:00' },
-]
+function CRON_SHORTCUTS() {
+  return [
+    { expr: '*/5 * * * *', text: t('cron.cronEvery5min') },
+    { expr: '*/15 * * * *', text: t('cron.cronEvery15min') },
+    { expr: '0 * * * *', text: t('cron.cronHourly') },
+    { expr: '0 9 * * *', text: t('cron.cronDaily9') },
+    { expr: '0 18 * * *', text: t('cron.cronDaily18') },
+    { expr: '0 9 * * 1', text: t('cron.cronMonday9') },
+    { expr: '0 9 1 * *', text: t('cron.cronMonthly1') },
+  ]
+}
 
 // ── 页面生命周期 ──
 
@@ -32,22 +35,22 @@ export async function render() {
 
   page.innerHTML = `
     <div class="page-header">
-      <h1 class="page-title">定时任务</h1>
-      <p class="page-desc">创建计划任务，让 AI 按设定时间自动执行指令</p>
+      <h1 class="page-title">${t('cron.title')}</h1>
+      <p class="page-desc">${t('cron.desc')}</p>
     </div>
     <div id="cron-gw-hint" style="display:none;margin-bottom:var(--space-md)">
       <div class="config-section" style="border-left:3px solid var(--warning);padding:12px 16px">
         <div style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:var(--font-size-sm)">
           ${icon('alert-circle', 16)}
-          <span>定时任务通过 Gateway 管理。请先启动 Gateway 后使用此功能。</span>
-          <a href="#/services" class="btn btn-sm btn-secondary" style="margin-left:auto;font-size:11px">服务管理</a>
+          <span>${t('cron.gwHint')}</span>
+          <a href="#/services" class="btn btn-sm btn-secondary" style="margin-left:auto;font-size:11px">${t('cron.goServices')}</a>
         </div>
       </div>
     </div>
     <div id="cron-stats" class="stat-cards" style="margin-bottom:var(--space-lg)"></div>
     <div class="config-actions" style="margin-bottom:var(--space-md)">
-      <button class="btn btn-primary btn-sm" id="btn-new-task">+ 创建任务</button>
-      <button class="btn btn-secondary btn-sm" id="btn-refresh-tasks">刷新</button>
+      <button class="btn btn-primary btn-sm" id="btn-new-task">${t('cron.newTask')}</button>
+      <button class="btn btn-secondary btn-sm" id="btn-refresh-tasks">${t('cron.refresh')}</button>
     </div>
     <div id="cron-list"></div>
   `
@@ -86,7 +89,7 @@ async function fixInvalidCronConfig() {
       delete config.cron.jobs
       if (Object.keys(config.cron).length === 0) delete config.cron
       await api.writeOpenclawConfig(config)
-      toast('已自动修复配置（移除无效的 cron.jobs）', 'info')
+      toast(t('cron.fixedConfig'), 'info')
     }
   } catch {}
 }
@@ -122,7 +125,7 @@ async function fetchJobs(page, state) {
 
     state.jobs = jobs.map(j => ({
       id: j.id,
-      name: j.name || j.id || '未命名',
+      name: j.name || j.id || t('cron.unknown'),
       description: j.description || '',
       message: j.payload?.message || j.payload?.text || '',
       payloadKind: j.payload?.kind || 'agentTurn',
@@ -134,7 +137,7 @@ async function fetchJobs(page, state) {
       lastError: j.state?.lastError || null,
     }))
   } catch (e) {
-    toast('获取任务列表失败: ' + e, 'error')
+    toast(t('cron.fetchFailed') + ': ' + e, 'error')
     state.jobs = []
   }
 
@@ -154,19 +157,19 @@ function renderStats(page, state) {
 
   el.innerHTML = `
     <div class="stat-card">
-      <div class="stat-card-header"><span class="stat-card-label">总任务</span></div>
+      <div class="stat-card-header"><span class="stat-card-label">${t('cron.totalTasks')}</span></div>
       <div class="stat-card-value">${total}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-header"><span class="stat-card-label">运行中</span></div>
+      <div class="stat-card-header"><span class="stat-card-label">${t('cron.running')}</span></div>
       <div class="stat-card-value" style="color:var(--success)">${active}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-header"><span class="stat-card-label">已暂停</span></div>
+      <div class="stat-card-header"><span class="stat-card-label">${t('cron.paused')}</span></div>
       <div class="stat-card-value" style="color:var(--text-tertiary)">${paused}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-header"><span class="stat-card-label">近期失败</span></div>
+      <div class="stat-card-header"><span class="stat-card-label">${t('cron.recentFailed')}</span></div>
       <div class="stat-card-value" style="color:${failed ? 'var(--error)' : 'var(--text-tertiary)'}">${failed}</div>
     </div>
   `
@@ -189,8 +192,8 @@ function renderList(page, state) {
     el.innerHTML = `
       <div style="text-align:center;padding:40px 0;color:var(--text-tertiary)">
         <div style="margin-bottom:12px;color:var(--text-tertiary)">${icon('clock', 48)}</div>
-        <div style="font-size:var(--font-size-md);margin-bottom:6px">暂无定时任务</div>
-        <div style="font-size:var(--font-size-sm)">点击「+ 创建任务」添加你的第一个计划任务</div>
+        <div style="font-size:var(--font-size-md);margin-bottom:6px">${t('cron.noTasks')}</div>
+        <div style="font-size:var(--font-size-sm)">${t('cron.noTasksHint')}</div>
       </div>
     `
     return
@@ -211,7 +214,7 @@ function renderList(page, state) {
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
               <span style="font-weight:600">${escapeHtml(job.name)}</span>
-              <span class="cron-badge ${job.enabled ? 'active' : 'paused'}">${job.enabled ? '运行中' : '已暂停'}</span>
+              <span class="cron-badge ${job.enabled ? 'active' : 'paused'}">${job.enabled ? t('cron.statusRunning') : t('cron.statusPaused')}</span>
               ${lastRunHtml}
             </div>
             <div style="font-size:var(--font-size-sm);color:var(--text-tertiary);margin-bottom:6px">
@@ -227,7 +230,7 @@ function renderList(page, state) {
             ` : ''}
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
-            <button class="btn btn-sm btn-secondary" data-action="trigger" title="立即执行">${icon('play', 14)}</button>
+            <button class="btn btn-sm btn-secondary" data-action="trigger" title="${t('cron.triggerSuccess')}">${icon('play', 14)}</button>
             <button class="btn btn-sm btn-secondary" data-action="toggle">${job.enabled ? icon('pause', 14) : icon('play', 14)}</button>
             <button class="btn btn-sm btn-secondary" data-action="edit">${icon('edit', 14)}</button>
             <button class="btn btn-sm btn-danger" data-action="delete">${icon('trash', 14)}</button>
@@ -248,9 +251,9 @@ function renderList(page, state) {
       btn.disabled = true
       try {
         await wsClient.request('cron.run', { jobId: jid })
-        toast('任务已触发执行', 'success')
+        toast(t('cron.triggerSuccess'), 'success')
         setTimeout(() => fetchJobs(page, state), 2000)
-      } catch (err) { toast('触发失败: ' + err, 'error') }
+      } catch (err) { toast(t('cron.triggerFailed') + ': ' + err, 'error') }
       finally { btn.disabled = false }
     }
 
@@ -260,23 +263,23 @@ function renderList(page, state) {
       btn.innerHTML = icon('refresh-cw', 14)
       try {
         await wsClient.request('cron.update', { jobId: jid, patch: { enabled: !job.enabled } })
-        toast(job.enabled ? '已暂停' : '已启用', 'info')
+        toast(job.enabled ? t('cron.togglePaused') : t('cron.toggleEnabled'), 'info')
         await fetchJobs(page, state)
-      } catch (err) { toast('操作失败: ' + err, 'error'); btn.disabled = false; btn.innerHTML = job.enabled ? icon('pause', 14) : icon('play', 14) }
+      } catch (err) { toast(t('cron.toggleFailed') + ': ' + err, 'error'); btn.disabled = false; btn.innerHTML = job.enabled ? icon('pause', 14) : icon('play', 14) }
     }
 
     card.querySelector('[data-action="edit"]').onclick = () => openTaskDialog(job, page, state)
 
     card.querySelector('[data-action="delete"]').onclick = async function() {
       const btn = this
-      const yes = await showConfirm(`确定删除任务「${job.name}」？`)
+      const yes = await showConfirm(t('cron.confirmDelete', { name: job.name }))
       if (!yes) return
       if (btn) btn.disabled = true
       try {
         await wsClient.request('cron.remove', { jobId: jid })
-        toast('已删除', 'info')
+        toast(t('cron.deleted'), 'info')
         await fetchJobs(page, state)
-      } catch (err) { toast('删除失败: ' + err, 'error'); if (btn) btn.disabled = false }
+      } catch (err) { toast(t('cron.deleteFailed') + ': ' + err, 'error'); if (btn) btn.disabled = false }
     }
   })
 }
@@ -285,49 +288,49 @@ function renderList(page, state) {
 
 async function openTaskDialog(job, page, state) {
   if (!isGatewayUp()) {
-    toast('Gateway 未连接，无法管理定时任务。请先启动 Gateway', 'warning')
+    toast(t('cron.gwNotConnected'), 'warning')
     return
   }
   const isEdit = !!job
   const initSchedule = extractCronExpr(job?.schedule) || '0 9 * * *'
   const formId = 'cron-form-' + Date.now()
 
-  const shortcutsHtml = CRON_SHORTCUTS.map(s => {
+  const shortcutsHtml = CRON_SHORTCUTS().map(s => {
     const selected = s.expr === initSchedule ? 'selected' : ''
     return `<button type="button" class="btn btn-sm ${selected ? 'btn-primary' : 'btn-secondary'} cron-shortcut" data-expr="${s.expr}">${s.text}</button>`
   }).join('')
 
   // 先用默认选项，弹窗后异步加载 Agent 列表
-  const agentOptionsHtml = `<option value="" ${!job?.agentId ? 'selected' : ''}>默认 Agent</option>${job?.agentId ? `<option value="${escapeAttr(job.agentId)}" selected>${escapeHtml(job.agentId)}</option>` : ''}`
+  const agentOptionsHtml = `<option value="" ${!job?.agentId ? 'selected' : ''}>${t('cron.taskAgentDefault')}</option>${job?.agentId ? `<option value="${escapeAttr(job.agentId)}" selected>${escapeHtml(job.agentId)}</option>` : ''}`
 
   const content = `
     <form id="${formId}" style="display:flex;flex-direction:column;gap:var(--space-md)">
       <div class="form-group">
-        <label class="form-label">任务名称 *</label>
-        <input class="form-input" name="name" value="${escapeAttr(job?.name || '')}" placeholder="如：每日摘要推送" autofocus>
+        <label class="form-label">${t('cron.taskName')}</label>
+        <input class="form-input" name="name" value="${escapeAttr(job?.name || '')}" placeholder="${t('cron.taskNamePlaceholder')}" autofocus>
       </div>
       <div class="form-group">
-        <label class="form-label">执行指令 *</label>
-        <textarea class="form-input" name="message" rows="3" placeholder="AI 将在触发时执行这段指令">${escapeHtml(job?.message || '')}</textarea>
+        <label class="form-label">${t('cron.taskMessage')}</label>
+        <textarea class="form-input" name="message" rows="3" placeholder="${t('cron.taskMessagePlaceholder')}">${escapeHtml(job?.message || '')}</textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">指定 Agent</label>
+        <label class="form-label">${t('cron.taskAgent')}</label>
         <select class="form-input" name="agentId">${agentOptionsHtml}</select>
-        <div class="form-hint">不选则使用默认 Agent 执行</div>
+        <div class="form-hint">${t('cron.taskAgentHint')}</div>
       </div>
       <div class="form-group">
-        <label class="form-label">投递渠道</label>
-        <select class="form-input" name="deliveryChannel"><option value="">无（主会话）</option></select>
-        <div class="form-hint">配置了多个消息渠道时必须指定，否则任务会报错</div>
+        <label class="form-label">${t('cron.taskDelivery')}</label>
+        <select class="form-input" name="deliveryChannel"><option value="">${t('cron.taskDeliveryNone')}</option></select>
+        <div class="form-hint">${t('cron.taskDeliveryHint')}</div>
       </div>
       <div class="form-group">
-        <label class="form-label">执行周期</label>
+        <label class="form-label">${t('cron.taskSchedule')}</label>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${shortcutsHtml}</div>
-        <input class="form-input" name="schedule" value="${escapeAttr(initSchedule)}" placeholder="Cron 表达式，如 0 9 * * *">
+        <input class="form-input" name="schedule" value="${escapeAttr(initSchedule)}" placeholder="${t('cron.taskSchedulePlaceholder')}">
         <div class="form-hint" id="cron-preview">${describeCron(initSchedule)}</div>
       </div>
       <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
-        <label class="form-label" style="margin:0">创建后立即启用</label>
+        <label class="form-label" style="margin:0">${t('cron.taskEnableNow')}</label>
         <label class="toggle-switch">
           <input type="checkbox" name="enabled" ${job?.enabled !== false ? 'checked' : ''}>
           <span class="toggle-slider"></span>
@@ -337,10 +340,10 @@ async function openTaskDialog(job, page, state) {
   `
 
   const modal = showContentModal({
-    title: isEdit ? '编辑任务' : '创建定时任务',
+    title: isEdit ? t('cron.editTitle') : t('cron.createTitle'),
     content,
     buttons: [
-      { label: isEdit ? '保存修改' : '创建', className: 'btn btn-primary', id: 'btn-cron-save' },
+      { label: isEdit ? t('cron.saveEdit') : t('cron.saveCreate'), className: 'btn btn-primary', id: 'btn-cron-save' },
     ],
     width: 500,
   })
@@ -353,7 +356,7 @@ async function openTaskDialog(job, page, state) {
     const select = modal.querySelector('select[name="deliveryChannel"]')
     if (!select) return
     const current = job?.delivery?.channel || ''
-    select.innerHTML = `<option value="">无（主会话）</option>` + channelIds.map(ch =>
+    select.innerHTML = `<option value="">${t('cron.taskDeliveryNone')}</option>` + channelIds.map(ch =>
       `<option value="${escapeAttr(ch)}" ${ch === current ? 'selected' : ''}>${escapeHtml(ch)}</option>`
     ).join('')
   }).catch(() => {})
@@ -365,7 +368,7 @@ async function openTaskDialog(job, page, state) {
     const select = modal.querySelector('select[name="agentId"]')
     if (!select) return
     const currentVal = select.value
-    select.innerHTML = `<option value="">默认 Agent</option>` + agents.map(a =>
+    select.innerHTML = `<option value="">${t('cron.taskAgentDefault')}</option>` + agents.map(a =>
       `<option value="${escapeAttr(a.id)}" ${a.id === (job?.agentId || currentVal) ? 'selected' : ''}>${escapeHtml(a.name || a.id)}</option>`
     ).join('')
   }).catch(() => {})
@@ -408,13 +411,13 @@ async function openTaskDialog(job, page, state) {
     const agentId = modal.querySelector('select[name="agentId"]').value || undefined
     const enabled = modal.querySelector('input[name="enabled"]').checked
 
-    if (!name) { toast('请输入任务名称', 'warning'); return }
-    if (!message) { toast('请输入执行指令', 'warning'); return }
-    if (!schedule) { toast('请设置执行周期', 'warning'); return }
+    if (!name) { toast(t('cron.nameRequired'), 'warning'); return }
+    if (!message) { toast(t('cron.messageRequired'), 'warning'); return }
+    if (!schedule) { toast(t('cron.scheduleRequired'), 'warning'); return }
 
     const saveBtn = modal.querySelector('#btn-cron-save')
     saveBtn.disabled = true
-    saveBtn.textContent = '保存中...'
+    saveBtn.textContent = t('cron.saving')
 
     try {
       if (isEdit) {
@@ -427,7 +430,7 @@ async function openTaskDialog(job, page, state) {
           patch.delivery = { mode: 'push', to: deliveryChannel, channel: deliveryChannel }
         }
         await wsClient.request('cron.update', { jobId: job.id, patch })
-        toast('任务已更新', 'success')
+        toast(t('cron.updated'), 'success')
       } else {
         const params = {
           name,
@@ -441,14 +444,14 @@ async function openTaskDialog(job, page, state) {
           params.delivery = { mode: 'push', to: deliveryChannel, channel: deliveryChannel }
         }
         await wsClient.request('cron.add', params)
-        toast('任务已创建', 'success')
+        toast(t('cron.created'), 'success')
       }
       modal.close?.() || modal.remove?.()
       await fetchJobs(page, state)
     } catch (e) {
-      toast('保存失败: ' + e, 'error')
+      toast(t('cron.saveFailed') + ': ' + e, 'error')
       saveBtn.disabled = false
-      saveBtn.textContent = isEdit ? '保存修改' : '创建'
+      saveBtn.textContent = isEdit ? t('cron.saveEdit') : t('cron.saveCreate')
     }
   }
 }
@@ -467,38 +470,38 @@ function extractCronExpr(schedule) {
 /** 将 cron 表达式转为可读文字 */
 function describeCron(raw) {
   const expr = typeof raw === 'string' ? raw : extractCronExpr(raw)
-  if (!expr) return '未知周期'
+  if (!expr) return t('cron.unknownPeriod')
 
-  const hit = CRON_SHORTCUTS.find(s => s.expr === expr)
+  const hit = CRON_SHORTCUTS().find(s => s.expr === expr)
   if (hit) return hit.text
 
   const parts = expr.split(' ')
   if (parts.length !== 5) return expr
 
   const [min, hr, dom, , dow] = parts
-  if (min === '*' && hr === '*') return '每分钟'
-  if (min.startsWith('*/')) return `每 ${min.slice(2)} 分钟`
-  if (hr === '*' && min === '0') return '每小时整点'
-  if (dow !== '*' && dom === '*') return `每周 ${dow} 的 ${hr}:${min.padStart(2, '0')}`
-  if (dom !== '*') return `每月 ${dom} 号 ${hr}:${min.padStart(2, '0')}`
-  if (hr !== '*') return `每天 ${hr}:${min.padStart(2, '0')}`
+  if (min === '*' && hr === '*') return t('cron.everyMinute')
+  if (min.startsWith('*/')) return t('cron.everyNMin', { n: min.slice(2) })
+  if (hr === '*' && min === '0') return t('cron.hourlyOnTheHour')
+  if (dow !== '*' && dom === '*') return `${dow} ${hr}:${min.padStart(2, '0')}`
+  if (dom !== '*') return `${dom} ${hr}:${min.padStart(2, '0')}`
+  if (hr !== '*') return `${hr}:${min.padStart(2, '0')}`
 
   return expr
 }
 
 /** 将 Gateway 返回的 CronSchedule 对象也处理成可读文字 */
 function describeCronFull(schedule) {
-  if (!schedule) return '未知'
+  if (!schedule) return t('cron.unknown')
   if (typeof schedule === 'string') return describeCron(schedule)
   if (typeof schedule === 'object') {
     if (schedule.kind === 'every' && schedule.everyMs) {
       const ms = schedule.everyMs
-      if (ms < 60000) return `每 ${Math.round(ms / 1000)} 秒`
-      if (ms < 3600000) return `每 ${Math.round(ms / 60000)} 分钟`
-      return `每 ${Math.round(ms / 3600000)} 小时`
+      if (ms < 60000) return t('cron.everyNSec', { n: Math.round(ms / 1000) })
+      if (ms < 3600000) return t('cron.everyNMin', { n: Math.round(ms / 60000) })
+      return t('cron.everyNHour', { n: Math.round(ms / 3600000) })
     }
     if (schedule.kind === 'at' && schedule.at) {
-      try { return '一次性: ' + new Date(schedule.at).toLocaleString() } catch { return schedule.at }
+      try { return t('cron.oneTime') + ': ' + new Date(schedule.at).toLocaleString() } catch { return schedule.at }
     }
     if (schedule.kind === 'cron' && schedule.expr) return describeCron(schedule.expr)
   }
@@ -508,12 +511,12 @@ function describeCronFull(schedule) {
 /** 相对时间描述 */
 function relativeTime(ts) {
   if (!ts) return ''
-  const t = typeof ts === 'number' ? ts : new Date(ts).getTime()
-  const diff = Date.now() - t
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前'
-  return Math.floor(diff / 86400000) + ' 天前'
+  const ms = typeof ts === 'number' ? ts : new Date(ts).getTime()
+  const diff = Date.now() - ms
+  if (diff < 60000) return t('cron.justNow')
+  if (diff < 3600000) return t('cron.minutesAgo', { n: Math.floor(diff / 60000) })
+  if (diff < 86400000) return t('cron.hoursAgo', { n: Math.floor(diff / 3600000) })
+  return t('cron.daysAgo', { n: Math.floor(diff / 86400000) })
 }
 
 function escapeHtml(str) {

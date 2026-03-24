@@ -7,7 +7,7 @@ import { isOpenclawReady, getActiveInstance, switchInstance, onInstanceChange } 
 import { api } from '../lib/tauri-api.js'
 import { toast } from './toast.js'
 import { version as APP_VERSION } from '../../package.json'
-import { t } from '../lib/i18n.js'
+import { t, getLang, setLang, getAvailableLangs } from '../lib/i18n.js'
 
 function NAV_ITEMS_FULL() { return [
   {
@@ -176,11 +176,36 @@ export function renderSidebar(el) {
   const sunIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
   const moonIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>'
 
+  const langCode = getLang()
+  const langs = getAvailableLangs()
+  const currentLang = langs.find(l => l.code === langCode) || langs[0]
+  const globeIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>'
+  const checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>'
+
+  const langOptions = langs.map(l => `
+    <div class="lang-option${l.code === langCode ? ' active' : ''}" data-lang="${l.code}">
+      <span class="lang-option-label">${l.label}</span>
+      <span class="lang-option-code">${l.code}</span>
+      ${l.code === langCode ? `<span class="lang-option-check">${checkIcon}</span>` : ''}
+    </div>
+  `).join('')
+
   html += `
     <div class="sidebar-footer">
       <div class="nav-item" id="btn-theme-toggle">
         ${isDark ? sunIcon : moonIcon}
         <span>${isDark ? t('sidebar.themeLight') : t('sidebar.themeDark')}</span>
+      </div>
+      <div class="lang-switcher" id="lang-switcher">
+        <button class="nav-item lang-trigger" id="btn-lang-toggle">
+          ${globeIcon}
+          <span>${currentLang.label}</span>
+          <svg class="lang-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M18 15l-6-6-6 6"/></svg>
+        </button>
+        <div class="lang-dropdown" id="lang-dropdown">
+          ${langs.length > 4 ? '<div class="lang-search-wrap"><input class="lang-search" id="lang-search" type="text" placeholder="Search..." autocomplete="off"></div>' : ''}
+          <div class="lang-options" id="lang-options">${langOptions}</div>
+        </div>
       </div>
       <div class="sidebar-meta">
         <a href="https://claw.qt.cool" target="_blank" rel="noopener" class="sidebar-link">claw.qt.cool</a>
@@ -226,6 +251,25 @@ export function renderSidebar(el) {
         toggleTheme(() => renderSidebar(el))
         return
       }
+      // 语言切换器：打开/关闭下拉
+      const langBtn = e.target.closest('#btn-lang-toggle')
+      if (langBtn) {
+        _toggleLangDropdown(el)
+        return
+      }
+      // 语言选项点击
+      const langOpt = e.target.closest('.lang-option[data-lang]')
+      if (langOpt) {
+        const code = langOpt.dataset.lang
+        if (code !== getLang()) {
+          setLang(code)
+          renderSidebar(el)
+          reloadCurrentRoute()
+        } else {
+          _closeLangDropdown()
+        }
+        return
+      }
       // 实例切换器
       const toggleBtn = e.target.closest('#btn-instance-toggle')
       if (toggleBtn) {
@@ -260,6 +304,9 @@ export function renderSidebar(el) {
       if (!e.target.closest('.instance-switcher')) {
         _closeInstanceDropdown()
       }
+      if (!e.target.closest('.lang-switcher')) {
+        _closeLangDropdown()
+      }
     })
 
     // 监听实例变化，刷新多实例标记后重新渲染
@@ -290,6 +337,40 @@ export function openMobileSidebar() {
     document.getElementById('app').appendChild(overlay)
   }
   requestAnimationFrame(() => overlay.classList.add('visible'))
+}
+
+function _closeLangDropdown() {
+  const sw = document.getElementById('lang-switcher')
+  const dd = document.getElementById('lang-dropdown')
+  if (dd) dd.classList.remove('open')
+  if (sw) sw.classList.remove('open')
+}
+
+function _toggleLangDropdown(sidebarEl) {
+  const sw = document.getElementById('lang-switcher')
+  const dd = document.getElementById('lang-dropdown')
+  if (!dd) return
+  if (dd.classList.contains('open')) { dd.classList.remove('open'); if (sw) sw.classList.remove('open'); return }
+  dd.classList.add('open')
+  if (sw) sw.classList.add('open')
+  const searchInput = dd.querySelector('#lang-search')
+  if (searchInput) {
+    searchInput.value = ''
+    _filterLangOptions('')
+    requestAnimationFrame(() => searchInput.focus())
+    searchInput.oninput = () => _filterLangOptions(searchInput.value)
+  }
+}
+
+function _filterLangOptions(query) {
+  const opts = document.querySelectorAll('#lang-options .lang-option')
+  const q = query.toLowerCase().trim()
+  opts.forEach(opt => {
+    if (!q) { opt.style.display = ''; return }
+    const label = (opt.querySelector('.lang-option-label')?.textContent || '').toLowerCase()
+    const code = (opt.querySelector('.lang-option-code')?.textContent || '').toLowerCase()
+    opt.style.display = (label.includes(q) || code.includes(q)) ? '' : 'none'
+  })
 }
 
 function _closeInstanceDropdown() {

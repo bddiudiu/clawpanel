@@ -797,11 +797,11 @@ fn clean_cli_output(text: &str) -> String {
     let start_idx = lines.iter().position(|l| !l.trim().is_empty()).unwrap_or(0);
     let relevant_lines = &lines[start_idx..];
 
-    // 6. Find the first line that starts JSON (fast path)
-    for line in relevant_lines {
+    // 6. Find the first line that starts JSON and return from there to end
+    for (i, line) in relevant_lines.iter().enumerate() {
         let trimmed = line.trim();
         if trimmed.starts_with('{') || trimmed.starts_with('[') {
-            return trimmed.to_string();
+            return relevant_lines[i..].join("\n");
         }
     }
 

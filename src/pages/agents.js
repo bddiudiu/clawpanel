@@ -6,6 +6,7 @@ import { api, invalidate } from '../lib/tauri-api.js'
 import { toast } from '../components/toast.js'
 import { showModal, showConfirm } from '../components/modal.js'
 import { CHANNEL_LABELS } from '../lib/channel-labels.js'
+import { t } from '../lib/i18n.js'
 
 export async function render() {
   const page = document.createElement('div')
@@ -14,11 +15,11 @@ export async function render() {
   page.innerHTML = `
     <div class="page-header">
       <div>
-        <h1 class="page-title">Agent 管理</h1>
-        <p class="page-desc">创建和管理 OpenClaw Agent，配置身份、模型和工作区</p>
+        <h1 class="page-title">${t('agents.title')}</h1>
+        <p class="page-desc">${t('agents.desc')}</p>
       </div>
       <div class="page-actions">
-        <button class="btn btn-primary" id="btn-add-agent">+ 新建 Agent</button>
+        <button class="btn btn-primary" id="btn-add-agent">${t('agents.addAgent')}</button>
       </div>
     </div>
     <div class="page-content">
@@ -67,8 +68,8 @@ async function loadAgents(page, state) {
       state.eventsAttached = true
     }
   } catch (e) {
-    container.innerHTML = '<div style="color:var(--error);padding:20px">加载失败: ' + String(e).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
-    toast('加载 Agent 列表失败: ' + e, 'error')
+    container.innerHTML = '<div style="color:var(--error);padding:20px">' + t('agents.loadFailed') + ': ' + String(e).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
+    toast(t('agents.loadListFailed') + ': ' + e, 'error')
   }
 }
 
@@ -76,7 +77,7 @@ async function loadAgents(page, state) {
 function renderBindingBadges(agentId, bindings) {
   const matched = (bindings || []).filter(b => (b.agentId || 'main') === agentId)
   if (!matched.length) {
-    return '<span style="color:var(--text-tertiary)">未绑定渠道</span>'
+    return `<span style="color:var(--text-tertiary)">${t('agents.noBinding')}</span>`
   }
   return matched.map(b => {
     const channel = b.match?.channel || ''
@@ -91,41 +92,41 @@ function renderBindingBadges(agentId, bindings) {
 function renderAgents(page, state) {
   const container = page.querySelector('#agents-list')
   if (!state.agents.length) {
-    container.innerHTML = '<div style="color:var(--text-tertiary);padding:20px;text-align:center">暂无 Agent</div>'
+    container.innerHTML = `<div style="color:var(--text-tertiary);padding:20px;text-align:center">${t('agents.noAgents')}</div>`
     return
   }
 
   container.innerHTML = state.agents.map(a => {
     const isDefault = a.isDefault || a.id === 'main'
-    const name = a.identityName ? a.identityName.split(',')[0].trim() : '无描述'
+    const name = a.identityName ? a.identityName.split(',')[0].trim() : t('agents.noDesc')
     return `
       <div class="agent-card" data-id="${a.id}">
         <div class="agent-card-header">
           <div class="agent-card-title">
             <span class="agent-id">${a.id}</span>
-            ${isDefault ? '<span class="badge badge-success">默认</span>' : ''}
+            ${isDefault ? `<span class="badge badge-success">${t('agents.default')}</span>` : ''}
           </div>
           <div class="agent-card-actions">
-            <button class="btn btn-sm btn-secondary" data-action="backup" data-id="${a.id}">备份</button>
-            <button class="btn btn-sm btn-secondary" data-action="edit" data-id="${a.id}">编辑</button>
-            ${!isDefault ? `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${a.id}">删除</button>` : ''}
+            <button class="btn btn-sm btn-secondary" data-action="backup" data-id="${a.id}">${t('agents.backup')}</button>
+            <button class="btn btn-sm btn-secondary" data-action="edit" data-id="${a.id}">${t('agents.edit')}</button>
+            ${!isDefault ? `<button class="btn btn-sm btn-danger" data-action="delete" data-id="${a.id}">${t('agents.delete')}</button>` : ''}
           </div>
         </div>
         <div class="agent-card-body">
           <div class="agent-info-row">
-            <span class="agent-info-label">名称:</span>
+            <span class="agent-info-label">${t('agents.labelName')}</span>
             <span class="agent-info-value">${name}</span>
           </div>
           <div class="agent-info-row">
-            <span class="agent-info-label">模型:</span>
-            <span class="agent-info-value">${typeof a.model === 'object' ? (a.model?.primary || a.model?.id || JSON.stringify(a.model)) : (a.model || '未设置')}</span>
+            <span class="agent-info-label">${t('agents.labelModel')}</span>
+            <span class="agent-info-value">${typeof a.model === 'object' ? (a.model?.primary || a.model?.id || JSON.stringify(a.model)) : (a.model || t('agents.notSet'))}</span>
           </div>
           <div class="agent-info-row">
-            <span class="agent-info-label">工作区:</span>
-            <span class="agent-info-value" style="font-family:var(--font-mono);font-size:var(--font-size-xs)">${a.workspace || '未设置'}</span>
+            <span class="agent-info-label">${t('agents.labelWorkspace')}</span>
+            <span class="agent-info-value" style="font-family:var(--font-mono);font-size:var(--font-size-xs)">${a.workspace || t('agents.notSet')}</span>
           </div>
           <div class="agent-info-row">
-            <span class="agent-info-label">绑定渠道:</span>
+            <span class="agent-info-label">${t('agents.labelBindings')}</span>
             <span class="agent-info-value">${renderBindingBadges(a.id, state.bindings)}</span>
           </div>
         </div>
@@ -163,23 +164,23 @@ async function showAddAgentDialog(page, state) {
   } catch { models = [{ value: 'newapi/claude-opus-4-6', label: 'newapi/claude-opus-4-6' }] }
 
   if (!models.length) {
-    toast('请先在模型配置页面添加模型', 'warning')
+    toast(t('agents.addModelsFirst'), 'warning')
     return
   }
 
   showModal({
-    title: '新建 Agent',
+    title: t('agents.addTitle'),
     fields: [
-      { name: 'id', label: 'Agent ID', value: '', placeholder: '例如：translator（小写字母、数字、下划线、连字符）' },
-      { name: 'name', label: '名称', value: '', placeholder: '例如：翻译助手' },
-      { name: 'emoji', label: 'Emoji', value: '', placeholder: '例如：🌐（可选）' },
-      { name: 'model', label: '模型', type: 'select', value: models[0]?.value || '', options: models },
-      { name: 'workspace', label: '工作区路径', value: '', placeholder: '留空则自动创建（可选，绝对路径）' },
+      { name: 'id', label: t('agents.agentId'), value: '', placeholder: t('agents.agentIdPlaceholder') },
+      { name: 'name', label: t('agents.agentName'), value: '', placeholder: t('agents.agentNamePlaceholder') },
+      { name: 'emoji', label: t('agents.agentEmoji'), value: '', placeholder: t('agents.agentEmojiPlaceholder') },
+      { name: 'model', label: t('agents.agentModel'), type: 'select', value: models[0]?.value || '', options: models },
+      { name: 'workspace', label: t('agents.agentWorkspace'), value: '', placeholder: t('agents.agentWorkspacePlaceholder') },
     ],
     onConfirm: async (result) => {
       const id = (result.id || '').trim()
-      if (!id) { toast('请输入 Agent ID', 'warning'); return }
-      if (!/^[a-z0-9_-]+$/.test(id)) { toast('Agent ID 只能包含小写字母、数字、下划线和连字符', 'warning'); return }
+      if (!id) { toast(t('agents.idRequired'), 'warning'); return }
+      if (!/^[a-z0-9_-]+$/.test(id)) { toast(t('agents.idInvalid'), 'warning'); return }
 
       const name = (result.name || '').trim()
       const emoji = (result.emoji || '').trim()
@@ -194,16 +195,16 @@ async function showAddAgentDialog(page, state) {
             await api.updateAgentIdentity(id, name || null, emoji || null)
           } catch (identityErr) {
             console.warn('[Agent] 身份信息更新失败（Agent 已创建）:', identityErr)
-            toast('Agent 已创建，但名称设置失败，可稍后编辑', 'warning')
+            toast(t('agents.createdNameFailed'), 'warning')
           }
         }
-        toast('Agent 已创建', 'success')
+        toast(t('agents.created'), 'success')
 
         // 强制清除缓存并重新加载
         invalidate('list_agents')
         await loadAgents(page, state)
       } catch (e) {
-        toast('创建失败: ' + e, 'error')
+        toast(t('agents.createFailed') + ': ' + e, 'error')
       }
     }
   })
@@ -232,13 +233,13 @@ async function showEditAgentDialog(page, state, id) {
   }
 
   const fields = [
-    { name: 'name', label: '名称', value: name, placeholder: '例如：翻译助手' },
-    { name: 'emoji', label: 'Emoji', value: agent.identityEmoji || '', placeholder: '例如：🌐' },
+    { name: 'name', label: t('agents.agentName'), value: name, placeholder: t('agents.agentNamePlaceholder') },
+    { name: 'emoji', label: t('agents.agentEmoji'), value: agent.identityEmoji || '', placeholder: t('agents.agentEmojiPlaceholder') },
   ]
 
   if (models.length) {
     const modelField = {
-      name: 'model', label: '模型', type: 'select',
+      name: 'model', label: t('agents.agentModel'), type: 'select',
       value: agent.model || models[0]?.value || '',
       options: models,
     }
@@ -250,14 +251,14 @@ async function showEditAgentDialog(page, state, id) {
   }
 
   fields.push({
-    name: 'workspace', label: '工作区',
-    value: agent.workspace || '未设置',
-    placeholder: '创建时指定，不可修改',
+    name: 'workspace', label: t('agents.labelWorkspace').replace(':', ''),
+    value: agent.workspace || t('agents.notSet'),
+    placeholder: t('agents.workspaceReadonly'),
     readonly: true,
   })
 
   showModal({
-    title: `编辑 Agent — ${id}`,
+    title: t('agents.editTitle', { id }),
     fields,
     onConfirm: async (result) => {
       console.log('[Agent编辑] 保存数据:', result)
@@ -281,30 +282,30 @@ async function showEditAgentDialog(page, state, id) {
         if (model) agent.model = model
         renderAgents(page, state)
 
-        toast('已更新', 'success')
+        toast(t('agents.updated'), 'success')
       } catch (e) {
         console.error('[Agent编辑] 保存失败:', e)
-        toast('更新失败: ' + e, 'error')
+        toast(t('agents.updateFailed') + ': ' + e, 'error')
       }
     }
   })
 }
 
 async function deleteAgent(page, state, id) {
-  const yes = await showConfirm(`确定删除 Agent「${id}」？\n\n此操作将删除该 Agent 的所有数据和会话。`)
+  const yes = await showConfirm(t('agents.confirmDelete', { id }))
   if (!yes) return
 
   try {
     await api.deleteAgent(id)
-    toast('已删除', 'success')
+    toast(t('agents.deleted'), 'success')
     await loadAgents(page, state)
   } catch (e) {
-    toast('删除失败: ' + e, 'error')
+    toast(t('agents.deleteFailed') + ': ' + e, 'error')
   }
 }
 
 async function backupAgent(id) {
-  toast(`正在备份 Agent「${id}」...`, 'info')
+  toast(t('agents.backingUp', { id }), 'info')
   try {
     const zipPath = await api.backupAgent(id)
     try {
@@ -312,8 +313,8 @@ async function backupAgent(id) {
       const dir = zipPath.substring(0, zipPath.lastIndexOf('/')) || zipPath
       await open(dir)
     } catch { /* fallback */ }
-    toast(`备份完成: ${zipPath.split('/').pop()}`, 'success')
+    toast(t('agents.backupDone', { file: zipPath.split('/').pop() }), 'success')
   } catch (e) {
-    toast('备份失败: ' + e, 'error')
+    toast(t('agents.backupFailed') + ': ' + e, 'error')
   }
 }

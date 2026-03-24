@@ -8,6 +8,7 @@ import { toast } from '../components/toast.js'
 import { setUpgrading, isMacPlatform } from '../lib/app-state.js'
 import { diagnoseInstallError } from '../lib/error-diagnosis.js'
 import { icon, statusIcon } from '../lib/icons.js'
+import { t } from '../lib/i18n.js'
 
 export async function render() {
   const page = document.createElement('div')
@@ -18,9 +19,9 @@ export async function render() {
       <div style="margin-bottom:var(--space-lg)">
         <img src="/images/logo-brand.png" alt="ClawPanel" style="max-width:160px;width:100%;height:auto">
       </div>
-      <h1 style="font-size:var(--font-size-xl);margin-bottom:var(--space-xs)">欢迎使用 ClawPanel</h1>
+      <h1 style="font-size:var(--font-size-xl);margin-bottom:var(--space-xs)">${t('setup.headerTitle')}</h1>
       <p style="color:var(--text-secondary);margin-bottom:var(--space-xl);line-height:1.6">
-        OpenClaw AI Agent 框架的桌面管理面板
+        ${t('setup.headerDesc')}
       </p>
 
       <div id="setup-steps"></div>
@@ -28,7 +29,7 @@ export async function render() {
       <div style="margin-top:var(--space-lg)">
         <button class="btn btn-secondary btn-sm" id="btn-recheck" style="min-width:120px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:4px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-          重新检测
+          ${t('setup.recheck')}
         </button>
       </div>
     </div>
@@ -103,30 +104,30 @@ function renderSteps(page, { node, git, cliOk, config, version }) {
   html += `
     <div class="config-section" style="text-align:left">
       <div class="config-section-title" style="display:flex;align-items:center;gap:4px">
-        ${stepIcon(nodeOk)} Node.js 环境
+        ${stepIcon(nodeOk)} ${t('setup.stepNode')}
       </div>
       ${nodeOk
-        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">已安装 ${node.version || ''}</p>`
+        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">${t('setup.installed')} ${node.version || ''}</p>`
         : `<p style="color:var(--text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-sm)">
-            OpenClaw 基于 Node.js 运行，请先安装。
+            ${t('setup.stepNodeHint')}
           </p>
-          <a class="btn btn-primary btn-sm" href="https://nodejs.org/" target="_blank" rel="noopener">下载 Node.js</a>
-          <span class="form-hint" style="margin-left:8px">安装后点击「重新检测」</span>
+          <a class="btn btn-primary btn-sm" href="https://nodejs.org/" target="_blank" rel="noopener">${t('setup.downloadNode')}</a>
+          <span class="form-hint" style="margin-left:8px">${t('setup.recheckAfterInstall')}</span>
           <div style="margin-top:var(--space-sm);padding:8px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);font-size:var(--font-size-xs);color:var(--text-secondary);line-height:1.6">
-            <strong>已经装了但检测不到？</strong>
+            <strong>${t('setup.nodeInstalledButNotDetected')}</strong>
             ${isMacPlatform()
-              ? `macOS 上从 Finder 启动可能找不到 Node.js。试试关掉 ClawPanel 后从终端启动：<br>
+              ? `${t('setup.macNodeHint')}<br>
                  <code style="background:var(--bg-secondary);padding:2px 6px;border-radius:3px;user-select:all">open /Applications/ClawPanel.app</code>`
-              : `安装 Node.js 后点击「重新检测」或使用下方「自动扫描」，无需重启。`
+              : `${t('setup.winNodeHint')}`
             }
             <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <button class="btn btn-secondary btn-sm" id="btn-scan-node" style="font-size:11px;padding:3px 10px">${icon('search', 12)} 自动扫描</button>
-              <span style="color:var(--text-tertiary)">或手动指定路径：</span>
+              <button class="btn btn-secondary btn-sm" id="btn-scan-node" style="font-size:11px;padding:3px 10px">${icon('search', 12)} ${t('setup.scanNodeBtn')}</button>
+              <span style="color:var(--text-tertiary)">${t('setup.orManualPath')}</span>
             </div>
             <div style="margin-top:6px;display:flex;gap:6px">
               <input id="input-node-path" type="text" placeholder="${isMacPlatform() ? '/usr/local/bin' : 'F:\\\\AI\\\\Node'}"
                 style="flex:1;padding:4px 8px;border:1px solid var(--border-primary);border-radius:var(--radius-sm);background:var(--bg-secondary);color:var(--text-primary);font-size:11px;font-family:monospace">
-              <button class="btn btn-primary btn-sm" id="btn-check-path" style="font-size:11px;padding:3px 10px">检测</button>
+              <button class="btn btn-primary btn-sm" id="btn-check-path" style="font-size:11px;padding:3px 10px">${t('setup.checkPathBtn')}</button>
             </div>
             <div id="scan-result" style="margin-top:6px;display:none"></div>
           </div>`
@@ -138,21 +139,21 @@ function renderSteps(page, { node, git, cliOk, config, version }) {
   html += `
     <div class="config-section" style="text-align:left;${nodeOk ? '' : 'opacity:0.4;pointer-events:none'}">
       <div class="config-section-title" style="display:flex;align-items:center;gap:4px">
-        ${stepIcon(gitOk)} Git 版本管理
+        ${stepIcon(gitOk)} ${t('setup.stepGit')}
       </div>
       ${gitOk
-        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">已安装 ${git.version || ''}</p>
-           <p style="font-size:var(--font-size-xs);color:var(--text-tertiary);margin-top:4px">✅ 已自动配置 Git 使用 HTTPS（避免 SSH 连接问题）</p>`
+        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">${t('setup.installed')} ${git.version || ''}</p>
+           <p style="font-size:var(--font-size-xs);color:var(--text-tertiary);margin-top:4px">✅ ${t('setup.gitHttpsConfigured')}</p>`
         : `<p style="color:var(--text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-sm);line-height:1.5">
-            部分依赖需要 Git 下载源码。点击下方按钮自动安装，如果失败请手动安装。
+            ${t('setup.stepGitHint')}
           </p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary btn-sm" id="btn-auto-install-git">一键安装 Git</button>
-            <a class="btn btn-secondary btn-sm" href="https://git-scm.com/downloads" target="_blank" rel="noopener">手动下载</a>
+            <button class="btn btn-primary btn-sm" id="btn-auto-install-git">${t('setup.autoInstallGitBtn')}</button>
+            <a class="btn btn-secondary btn-sm" href="https://git-scm.com/downloads" target="_blank" rel="noopener">${t('setup.manualDownload')}</a>
           </div>
           <div id="git-install-result" style="margin-top:var(--space-sm);display:none"></div>
           <div style="margin-top:8px;font-size:var(--font-size-xs);color:var(--text-tertiary);line-height:1.5">
-            <strong>没有 Git 也能安装？</strong> 大部分情况下可以，但个别依赖可能需要 Git。建议安装以避免问题。
+            ${t('setup.gitOptionalHint')}
           </div>`
       }
     </div>
@@ -165,10 +166,10 @@ function renderSteps(page, { node, git, cliOk, config, version }) {
         ${stepIcon(cliOk)} OpenClaw CLI
       </div>
       ${cliOk
-        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">CLI 可用</p>
+        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">${t('setup.cliAvailable')}</p>
            ${version?.ahead_of_recommended && version?.recommended
              ? `<div style="margin-top:8px;padding:8px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);font-size:var(--font-size-xs);color:var(--warning,#f59e0b);line-height:1.6">
-                  检测到当前本地 OpenClaw ${version.current || ''} 高于当前面板推荐稳定版 ${version.recommended}，可能存在兼容或稳定性风险。建议稍后到「关于」页回退到推荐版。
+                  ${t('setup.cliAheadWarning', { current: version.current || '', recommended: version.recommended })}
                 </div>`
              : ''}`
         : renderInstallSection()
@@ -179,28 +180,28 @@ function renderSteps(page, { node, git, cliOk, config, version }) {
   html += `
     <div class="config-section" style="text-align:left;${cliOk ? '' : 'opacity:0.4;pointer-events:none'}">
       <div class="config-section-title" style="display:flex;align-items:center;gap:4px">
-        ${stepIcon(config.installed)} 配置文件
+        ${stepIcon(config.installed)} ${t('setup.stepConfig')}
       </div>
       ${config.installed
-        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">配置文件位于 ${config.path || ''}</p>`
+        ? `<p style="color:var(--success);font-size:var(--font-size-sm)">${t('setup.configAt', { path: config.path || '' })}</p>`
         : `<p style="color:var(--text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-sm)">
-            配置文件不存在，点击下方按钮自动创建默认配置。
+            ${t('setup.configMissing')}
           </p>
-          <button class="btn btn-primary btn-sm" id="btn-init-config">一键初始化配置</button>`
+          <button class="btn btn-primary btn-sm" id="btn-init-config">${t('setup.initConfigLabel')}</button>`
       }
       <details style="margin-top:var(--space-sm);cursor:pointer" id="custom-dir-details">
         <summary style="font-size:var(--font-size-xs);color:var(--text-secondary);font-weight:600;user-select:none">
-          自定义 OpenClaw 安装路径
+          ${t('setup.customDirTitle')}
         </summary>
         <div style="margin-top:var(--space-sm);padding:10px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);font-size:var(--font-size-xs);line-height:1.6">
           <p style="color:var(--text-secondary);margin-bottom:8px">
-            如果 OpenClaw 安装在非默认目录（如 <code>E:\\数据\\AI\\.openclaw</code>），可在此指定。留空则使用默认路径。
+            ${t('setup.customDirHint')}
           </p>
           <div style="display:flex;gap:6px">
-            <input id="input-openclaw-dir" type="text" placeholder="例如 E:\\数据\\AI\\.openclaw"
+            <input id="input-openclaw-dir" type="text" placeholder="${t('setup.customDirPlaceholder')}"
               style="flex:1;padding:4px 8px;border:1px solid var(--border-primary);border-radius:var(--radius-sm);background:var(--bg-secondary);color:var(--text-primary);font-size:11px;font-family:monospace">
-            <button class="btn btn-primary btn-sm" id="btn-save-openclaw-dir" style="font-size:11px;padding:3px 10px">保存</button>
-            <button class="btn btn-secondary btn-sm" id="btn-reset-openclaw-dir" style="font-size:11px;padding:3px 10px">恢复默认</button>
+            <button class="btn btn-primary btn-sm" id="btn-save-openclaw-dir" style="font-size:11px;padding:3px 10px">${t('setup.saveBtn')}</button>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-openclaw-dir" style="font-size:11px;padding:3px 10px">${t('setup.resetDefaultBtn')}</button>
           </div>
           <div id="openclaw-dir-result" style="margin-top:6px;display:none"></div>
         </div>
@@ -213,19 +214,19 @@ function renderSteps(page, { node, git, cliOk, config, version }) {
     <div class="config-section" style="text-align:left;margin-top:var(--space-md)">
       <div class="config-section-title" style="display:flex;align-items:center;gap:6px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
-        晴辰助手
+        ${t('setup.aiAssistant')}
       </div>
       <p style="color:var(--text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-sm);line-height:1.5">
-        遇到安装问题？AI 助手可以帮你诊断和解决。配置好模型后，点击下方按钮${!allOk ? '，当前问题会自动发送给 AI 分析' : ''}。
+        ${t('setup.aiAssistantDesc')}${!allOk ? t('setup.aiAssistantDescProblem') : ''}。
       </p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" id="btn-goto-assistant">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:4px"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
-          打开 AI 助手
+          ${t('setup.openAiAssistant')}
         </button>
         ${!allOk ? `<button class="btn btn-primary btn-sm" id="btn-ask-ai-help">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:4px"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          让 AI 帮我解决
+          ${t('setup.askAiHelp')}
         </button>` : ''}
       </div>
     </div>
@@ -235,23 +236,23 @@ function renderSteps(page, { node, git, cliOk, config, version }) {
   if (allOk) {
     html += `
       <div class="config-section" style="text-align:left;margin-top:var(--space-md)">
-        <div class="config-section-title">下一步建议</div>
+        <div class="config-section-title">${t('setup.nextStepsTitle')}</div>
         <div style="color:var(--text-secondary);font-size:var(--font-size-sm);line-height:1.7">
-          当前仅表示运行环境已经就绪，并不代表已经可以直接聊天。通常还需要继续完成以下步骤：
+          ${t('setup.nextStepsDesc')}
           <ol style="margin:8px 0 0 18px;padding:0">
-            <li>前往「模型配置」添加至少一个可用模型，并确认主模型已设置</li>
-            <li>前往「Gateway」确认服务已启动</li>
-            <li>如需飞书、钉钉、QQ 等消息渠道，请到「消息渠道」完成接入与配对</li>
+            <li>${t('setup.nextStep1')}</li>
+            <li>${t('setup.nextStep2')}</li>
+            <li>${t('setup.nextStep3')}</li>
           </ol>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-          <button class="btn btn-secondary btn-sm" id="btn-goto-models">配置模型</button>
-          <button class="btn btn-secondary btn-sm" id="btn-goto-gateway">Gateway 设置</button>
-          <button class="btn btn-secondary btn-sm" id="btn-goto-channels">消息渠道</button>
+          <button class="btn btn-secondary btn-sm" id="btn-goto-models">${t('setup.configModels')}</button>
+          <button class="btn btn-secondary btn-sm" id="btn-goto-gateway">${t('setup.gatewaySetup')}</button>
+          <button class="btn btn-secondary btn-sm" id="btn-goto-channels">${t('setup.messageChannels')}</button>
         </div>
       </div>
       <div style="margin-top:var(--space-lg)">
-        <button class="btn btn-primary" id="btn-enter" style="min-width:200px">进入面板</button>
+        <button class="btn btn-primary" id="btn-enter" style="min-width:200px">${t('setup.enterPanel')}</button>
       </div>
     `
   }
@@ -269,118 +270,118 @@ function renderInstallSection() {
   if (isDesktop) {
     envHint = `
       <div style="margin-top:var(--space-sm);padding:10px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);border-left:3px solid var(--warning);font-size:var(--font-size-xs);color:var(--text-secondary);line-height:1.7">
-        <strong style="color:var(--text-primary)">找不到已安装的 OpenClaw？</strong>
-        <p style="margin:6px 0 2px">ClawPanel 桌面版只能管理<strong>本机</strong>安装的 OpenClaw。以下环境中的安装无法被检测到：</p>
+        <strong style="color:var(--text-primary)">${t('setup.envHintTitle')}</strong>
+        <p style="margin:6px 0 2px">${t('setup.envHintDesc')}</p>
         <ul style="margin:4px 0 8px 16px;padding:0">
           ${isWin ? `
-            <li><strong>WSL (Windows 子系统)</strong> — OpenClaw 装在 WSL 里，Windows 侧无法访问</li>
-            <li><strong>Docker 容器</strong> — 容器内的安装与宿主机隔离</li>
+            <li><strong>${t('setup.envHintWsl')}</strong> — ${t('setup.envHintWslDesc')}</li>
+            <li><strong>${t('setup.envHintDocker')}</strong> — ${t('setup.envHintDockerDesc')}</li>
           ` : ''}
           ${isMac ? `
-            <li><strong>Docker 容器</strong> — 容器内的安装与宿主机隔离</li>
-            <li><strong>远程服务器</strong> — 安装在其他机器上</li>
+            <li><strong>${t('setup.envHintDocker')}</strong> — ${t('setup.envHintDockerDesc')}</li>
+            <li><strong>${t('setup.envHintRemote')}</strong> — ${t('setup.envHintRemoteDesc')}</li>
           ` : ''}
           ${!isWin && !isMac ? `
-            <li><strong>Docker 容器</strong> — 容器内的安装与宿主机隔离</li>
+            <li><strong>${t('setup.envHintDocker')}</strong> — ${t('setup.envHintDockerDesc')}</li>
           ` : ''}
         </ul>
         <details style="cursor:pointer">
           <summary style="font-weight:600;color:var(--primary);margin-bottom:6px">
-            在对应环境中安装管理面板
+            ${t('setup.envHintInstallManage')}
           </summary>
           <div style="margin-top:8px">
             ${isWin ? `
               <div style="margin-bottom:10px">
-                <div style="font-weight:600;margin-bottom:4px">WSL 中使用 Web 版：</div>
-                <div style="margin-bottom:2px;opacity:0.8">打开 WSL 终端，一键部署 ClawPanel Web 版：</div>
+                <div style="font-weight:600;margin-bottom:4px">${t('setup.wslWebHint')}</div>
+                <div style="margin-bottom:2px;opacity:0.8">${t('setup.wslWebDesc')}</div>
                 <code style="display:block;background:var(--bg-secondary);padding:6px 10px;border-radius:4px;user-select:all;word-break:break-all">curl -fsSL https://raw.githubusercontent.com/qingchencloud/clawpanel/main/deploy.sh | bash</code>
-                <div style="margin-top:4px;opacity:0.7">国内用户如无法访问 GitHub：<code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px;user-select:all">curl -fsSL https://gitee.com/QtCodeCreators/clawpanel/raw/main/deploy.sh | bash</code></div>
-                <div style="margin-top:4px;opacity:0.7">部署后在浏览器访问 WSL 的 IP 即可管理。</div>
+                <div style="margin-top:4px;opacity:0.7">${t('setup.domesticMirror')}<code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px;user-select:all">curl -fsSL https://gitee.com/QtCodeCreators/clawpanel/raw/main/deploy.sh | bash</code></div>
+                <div style="margin-top:4px;opacity:0.7">${t('setup.wslWebPostDeploy')}</div>
               </div>
             ` : ''}
             <div style="margin-bottom:10px">
-              <div style="font-weight:600;margin-bottom:4px">Docker 容器中使用：</div>
-              <div style="margin-bottom:2px;opacity:0.8">在容器内安装 OpenClaw + ClawPanel Web 版：</div>
+              <div style="font-weight:600;margin-bottom:4px">${t('setup.dockerHint')}</div>
+              <div style="margin-bottom:2px;opacity:0.8">${t('setup.dockerDesc')}</div>
               <code style="display:block;background:var(--bg-secondary);padding:6px 10px;border-radius:4px;user-select:all;word-break:break-all;margin-bottom:4px">npm i -g @qingchencloud/openclaw-zh</code>
               <code style="display:block;background:var(--bg-secondary);padding:6px 10px;border-radius:4px;user-select:all;word-break:break-all">curl -fsSL https://raw.githubusercontent.com/qingchencloud/clawpanel/main/deploy.sh | bash</code>
-              <div style="margin-top:4px;opacity:0.7">国内镜像：<code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px;user-select:all">curl -fsSL https://gitee.com/QtCodeCreators/clawpanel/raw/main/deploy.sh | bash</code></div>
+              <div style="margin-top:4px;opacity:0.7">${t('setup.domesticMirrorShort')}<code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px;user-select:all">curl -fsSL https://gitee.com/QtCodeCreators/clawpanel/raw/main/deploy.sh | bash</code></div>
             </div>
             <div>
-              <div style="font-weight:600;margin-bottom:4px">远程服务器：</div>
-              <div style="margin-bottom:2px;opacity:0.8">SSH 登录服务器后执行：</div>
+              <div style="font-weight:600;margin-bottom:4px">${t('setup.remoteHint')}</div>
+              <div style="margin-bottom:2px;opacity:0.8">${t('setup.remoteDesc')}</div>
               <code style="display:block;background:var(--bg-secondary);padding:6px 10px;border-radius:4px;user-select:all;word-break:break-all">curl -fsSL https://raw.githubusercontent.com/qingchencloud/clawpanel/main/deploy.sh | bash</code>
-              <div style="margin-top:4px;opacity:0.7">国内镜像：<code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px;user-select:all">curl -fsSL https://gitee.com/QtCodeCreators/clawpanel/raw/main/deploy.sh | bash</code></div>
+              <div style="margin-top:4px;opacity:0.7">${t('setup.domesticMirrorShort')}<code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px;user-select:all">curl -fsSL https://gitee.com/QtCodeCreators/clawpanel/raw/main/deploy.sh | bash</code></div>
             </div>
           </div>
         </details>
         <div style="margin-top:6px;opacity:0.7">
-          或者，你也可以在本机重新安装 OpenClaw（使用下方的「一键安装」）。
+          ${t('setup.envHintLocalReinstall')}
         </div>
       </div>`
   }
 
   return `
     <p style="color:var(--text-secondary);font-size:var(--font-size-sm);margin-bottom:var(--space-sm)">
-      点击安装后，将默认安装当前 ClawPanel 版本绑定的推荐稳定版；如需升降级，可稍后到「关于」页面切换版本。
+      ${t('setup.installHint')}
     </p>
     <p style="color:var(--text-tertiary);font-size:var(--font-size-xs);line-height:1.6;margin:-4px 0 var(--space-sm)">
-      如果你是为了体验最新版功能，建议先安装推荐稳定版再手动切换；若希望面板优先适配最新版，欢迎提交 issue。
+      ${t('setup.installHint2')}
     </p>
     <div style="display:flex;gap:var(--space-sm);margin-bottom:var(--space-sm)">
       <label class="setup-source-option" style="flex:1;cursor:pointer">
         <input type="radio" name="install-source" value="chinese" checked style="margin-right:6px">
         <div>
-          <div style="font-weight:600;font-size:var(--font-size-sm)">汉化优化版（推荐）</div>
+          <div style="font-weight:600;font-size:var(--font-size-sm)">${t('setup.sourceChineseLabel')}</div>
           <div style="font-size:var(--font-size-xs);color:var(--text-tertiary)">@qingchencloud/openclaw-zh</div>
         </div>
       </label>
       <label class="setup-source-option" style="flex:1;cursor:pointer">
         <input type="radio" name="install-source" value="official" style="margin-right:6px">
         <div>
-          <div style="font-weight:600;font-size:var(--font-size-sm)">官方原版</div>
+          <div style="font-weight:600;font-size:var(--font-size-sm)">${t('setup.sourceOfficialLabel')}</div>
           <div style="font-size:var(--font-size-xs);color:var(--text-tertiary)">openclaw</div>
         </div>
       </label>
     </div>
     <div style="margin-bottom:var(--space-sm)" id="install-method-section">
-      <label style="font-size:var(--font-size-xs);color:var(--text-tertiary);display:block;margin-bottom:4px">安装方式</label>
+      <label style="font-size:var(--font-size-xs);color:var(--text-tertiary);display:block;margin-bottom:4px">${t('setup.installMethodLabel')}</label>
       <select id="install-method" style="width:100%;padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-primary);background:var(--bg-secondary);color:var(--text-primary);font-size:var(--font-size-sm)">
-        <option value="auto">自动选择（推荐）</option>
-        <option value="standalone-r2">独立安装包 · CDN 加速（国内推荐，自带 Node.js，无需 npm）</option>
-        <option value="standalone-github">独立安装包 · GitHub（CDN 不可用时备选）</option>
-        <option value="npm">npm 编译安装（传统方式，需要 Node.js + npm + 网络）</option>
+        <option value="auto">${t('setup.methodAuto')}</option>
+        <option value="standalone-r2">${t('setup.methodStandaloneR2')}</option>
+        <option value="standalone-github">${t('setup.methodStandaloneGithub')}</option>
+        <option value="npm">${t('setup.methodNpm')}</option>
       </select>
       <div id="method-hint" style="font-size:var(--font-size-xs);color:var(--text-tertiary);margin-top:4px;line-height:1.5"></div>
     </div>
     <div style="margin-bottom:var(--space-sm)" id="registry-section">
-      <label style="font-size:var(--font-size-xs);color:var(--text-tertiary);display:block;margin-bottom:4px">npm 镜像源</label>
+      <label style="font-size:var(--font-size-xs);color:var(--text-tertiary);display:block;margin-bottom:4px">${t('setup.registryLabel')}</label>
       <select id="registry-select" style="width:100%;padding:6px 8px;border-radius:var(--radius-sm);border:1px solid var(--border-primary);background:var(--bg-secondary);color:var(--text-primary);font-size:var(--font-size-sm)">
-        <option value="https://registry.npmmirror.com">淘宝镜像（推荐国内用户）</option>
-        <option value="https://registry.npmjs.org">npm 官方源</option>
-        <option value="https://repo.huaweicloud.com/repository/npm/">华为云镜像</option>
+        <option value="https://registry.npmmirror.com">${t('setup.registryTaobao')}</option>
+        <option value="https://registry.npmjs.org">${t('setup.registryNpm')}</option>
+        <option value="https://repo.huaweicloud.com/repository/npm/">${t('setup.registryHuawei')}</option>
       </select>
     </div>
-    <button class="btn btn-primary btn-sm" id="btn-install">一键安装</button>
+    <button class="btn btn-primary btn-sm" id="btn-install">${t('setup.installBtn')}</button>
     ${envHint}
   `
 }
 
 function buildSetupProblemPrompt({ node, git, cliOk, config }) {
   const problems = []
-  if (!node.installed) problems.push('- Node.js 未安装或未检测到')
-  else problems.push(`- Node.js 已安装: ${node.version || '版本未知'}`)
-  if (!git?.installed) problems.push('- Git 未安装')
-  else problems.push(`- Git 已安装: ${git.version || '版本未知'}`)
-  if (!cliOk) problems.push('- OpenClaw CLI 未安装')
-  else problems.push('- OpenClaw CLI 已安装')
-  if (!config.installed) problems.push('- 配置文件不存在')
-  else problems.push(`- 配置文件正常: ${config.path || ''}`)
+  if (!node.installed) problems.push(`- ${t('setup.promptNodeMissing')}`)
+  else problems.push(`- ${t('setup.promptNodeOk', { version: node.version || t('common.unknown') })}`)
+  if (!git?.installed) problems.push(`- ${t('setup.promptGitMissing')}`)
+  else problems.push(`- ${t('setup.promptGitOk', { version: git.version || t('common.unknown') })}`)
+  if (!cliOk) problems.push(`- ${t('setup.promptCliMissing')}`)
+  else problems.push(`- ${t('setup.promptCliOk')}`)
+  if (!config.installed) problems.push(`- ${t('setup.promptConfigMissing')}`)
+  else problems.push(`- ${t('setup.promptConfigOk', { path: config.path || '' })}`)
 
-  return `我在安装 OpenClaw 时遇到问题，以下是当前检测状态：
+  return `${t('setup.promptIntro')}
 
 ${problems.join('\n')}
 
-请帮我分析问题并给出解决步骤。如果需要，请使用工具帮我检查系统环境。`
+${t('setup.promptOutro')}`
 }
 
 function bindEvents(page, nodeOk, detectState) {
@@ -417,15 +418,15 @@ function bindEvents(page, nodeOk, detectState) {
     const btn = page.querySelector('#btn-auto-install-git')
     const resultEl = page.querySelector('#git-install-result')
     btn.disabled = true
-    btn.textContent = '安装中...'
+    btn.textContent = t('setup.installingGit')
     if (resultEl) {
       resultEl.style.display = 'block'
-      resultEl.innerHTML = '<span style="color:var(--text-tertiary)">正在安装 Git，请稍候...</span>'
+      resultEl.innerHTML = `<span style="color:var(--text-tertiary)">${t('setup.gitInstallingHint')}</span>`
     }
     try {
       const msg = await api.autoInstallGit()
       if (resultEl) resultEl.innerHTML = `<span style="color:var(--success)">✓ ${msg}</span>`
-      toast('Git 安装成功', 'success')
+      toast(t('setup.gitInstallSuccess'), 'success')
       // 安装成功后自动配置 HTTPS
       api.configureGitHttps().catch(() => {})
       setTimeout(() => runDetect(page), 1000)
@@ -433,19 +434,17 @@ function bindEvents(page, nodeOk, detectState) {
       const errMsg = String(e.message || e)
       if (resultEl) {
         resultEl.innerHTML = `<div>
-          <span style="color:var(--danger)">自动安装失败: ${errMsg}</span>
+          <span style="color:var(--danger)">${t('setup.gitAutoInstallFailed', { err: errMsg })}</span>
           <p style="margin-top:6px;font-size:var(--font-size-xs);color:var(--text-secondary);line-height:1.5">
-            请手动安装 Git：<br>
-            <strong>Windows:</strong> 下载 <a href="https://git-scm.com/downloads" target="_blank" style="color:var(--accent)">git-scm.com</a> 安装包<br>
-            <strong>macOS:</strong> 在终端执行 <code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px">xcode-select --install</code> 或 <code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px">brew install git</code><br>
-            <strong>Linux:</strong> <code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px">sudo apt install git</code> 或 <code style="background:var(--bg-secondary);padding:2px 4px;border-radius:3px">sudo yum install git</code>
+            ${t('setup.gitManualHint')}<br>
+            ${t('setup.gitManualInstallHtml')}
           </p>
         </div>`
       }
-      toast('Git 自动安装失败，请手动安装', 'warning')
+      toast(t('setup.gitAutoInstallFailedToast'), 'warning')
     } finally {
       btn.disabled = false
-      btn.textContent = '一键安装 Git'
+      btn.textContent = t('setup.autoInstallGitBtn')
     }
   })
 
@@ -466,21 +465,21 @@ function bindEvents(page, nodeOk, detectState) {
 
   page.querySelector('#btn-save-openclaw-dir')?.addEventListener('click', async () => {
     const value = dirInput?.value?.trim()
-    if (!value) { toast('请输入路径', 'warning'); return }
+    if (!value) { toast(t('setup.enterPath'), 'warning'); return }
     const btn = page.querySelector('#btn-save-openclaw-dir')
     btn.disabled = true
-    if (dirResultEl) { dirResultEl.style.display = 'block'; dirResultEl.innerHTML = '<span style="color:var(--text-tertiary)">保存中...</span>' }
+    if (dirResultEl) { dirResultEl.style.display = 'block'; dirResultEl.innerHTML = `<span style="color:var(--text-tertiary)">${t('setup.saving')}</span>` }
     try {
       const cfg = await api.readPanelConfig()
       cfg.openclawDir = value
       await api.writePanelConfig(cfg)
       invalidate()
-      if (dirResultEl) dirResultEl.innerHTML = `<span style="color:var(--success)">✓ 路径已保存，正在重新检测...</span>`
-      toast('自定义路径已保存', 'success')
+      if (dirResultEl) dirResultEl.innerHTML = `<span style="color:var(--success)">✓ ${t('setup.pathSaved')}</span>`
+      toast(t('setup.customPathSaved'), 'success')
       setTimeout(() => runDetect(page), 500)
     } catch (e) {
-      if (dirResultEl) dirResultEl.innerHTML = `<span style="color:var(--error)">保存失败: ${e}</span>`
-      toast('保存失败: ' + e, 'error')
+      if (dirResultEl) dirResultEl.innerHTML = `<span style="color:var(--error)">${t('setup.saveFailed', { err: e })}</span>`
+      toast(t('setup.saveFailed', { err: e }), 'error')
     } finally {
       btn.disabled = false
     }
@@ -495,11 +494,11 @@ function bindEvents(page, nodeOk, detectState) {
       await api.writePanelConfig(cfg)
       invalidate()
       if (dirInput) dirInput.value = ''
-      if (dirResultEl) { dirResultEl.style.display = 'block'; dirResultEl.innerHTML = `<span style="color:var(--success)">✓ 已恢复默认路径，正在重新检测...</span>` }
-      toast('已恢复默认路径', 'success')
+      if (dirResultEl) { dirResultEl.style.display = 'block'; dirResultEl.innerHTML = `<span style="color:var(--success)">✓ ${t('setup.defaultRestored')}</span>` }
+      toast(t('setup.defaultRestoredToast'), 'success')
       setTimeout(() => runDetect(page), 500)
     } catch (e) {
-      toast('恢复失败: ' + e, 'error')
+      toast(t('setup.restoreFailed', { err: e }), 'error')
     } finally {
       btn.disabled = false
     }
@@ -509,19 +508,19 @@ function bindEvents(page, nodeOk, detectState) {
   page.querySelector('#btn-init-config')?.addEventListener('click', async () => {
     const btn = page.querySelector('#btn-init-config')
     btn.disabled = true
-    btn.textContent = '初始化中...'
+    btn.textContent = t('setup.initializing')
     try {
       const result = await api.initOpenclawConfig()
       if (result?.created) {
-        toast('配置文件已创建', 'success')
+        toast(t('setup.configCreated'), 'success')
       } else {
-        toast(result?.message || '配置文件已存在', 'info')
+        toast(result?.message || t('setup.configExists'), 'info')
       }
       setTimeout(() => runDetect(page), 500)
     } catch (e) {
-      toast('初始化失败: ' + e, 'error')
+      toast(t('setup.initFailed', { err: e }), 'error')
       btn.disabled = false
-      btn.textContent = '一键初始化配置'
+      btn.textContent = t('setup.initConfigLabel')
     }
   })
 
@@ -530,35 +529,35 @@ function bindEvents(page, nodeOk, detectState) {
     const btn = page.querySelector('#btn-scan-node')
     const resultEl = page.querySelector('#scan-result')
     btn.disabled = true
-    btn.textContent = '扫描中...'
+    btn.textContent = t('setup.scanning')
     resultEl.style.display = 'block'
-    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">正在扫描常见安装路径...</span>'
+    resultEl.innerHTML = `<span style="color:var(--text-tertiary)">${t('setup.scanningPaths')}</span>`
     try {
       const results = await api.scanNodePaths()
       if (results.length === 0) {
-        resultEl.innerHTML = '<span style="color:var(--warning)">未找到 Node.js 安装，请手动指定路径或下载安装。</span>'
+        resultEl.innerHTML = `<span style="color:var(--warning)">${t('setup.scanNotFound')}</span>`
       } else {
         resultEl.innerHTML = results.map(r =>
           `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
             <span style="color:var(--success)">✓</span>
             <code style="flex:1;background:var(--bg-secondary);padding:2px 6px;border-radius:3px;font-size:11px">${r.path}</code>
             <span style="font-size:11px;color:var(--text-tertiary)">${r.version}</span>
-            <button class="btn btn-primary btn-sm btn-use-path" data-path="${r.path}" style="font-size:10px;padding:2px 8px">使用</button>
+            <button class="btn btn-primary btn-sm btn-use-path" data-path="${r.path}" style="font-size:10px;padding:2px 8px">${t('setup.scanUseBtn')}</button>
           </div>`
         ).join('')
         resultEl.querySelectorAll('.btn-use-path').forEach(b => {
           b.addEventListener('click', async () => {
             await api.saveCustomNodePath(b.dataset.path)
-            toast('Node.js 路径已保存，正在重新检测...', 'success')
+            toast(t('setup.nodeSaved'), 'success')
             setTimeout(() => runDetect(page), 300)
           })
         })
       }
     } catch (e) {
-      resultEl.innerHTML = `<span style="color:var(--danger)">扫描失败: ${e}</span>`
+      resultEl.innerHTML = `<span style="color:var(--danger)">${t('setup.scanFailed', { err: e })}</span>`
     } finally {
       btn.disabled = false
-      btn.innerHTML = `${icon('search', 12)} 自动扫描`
+      btn.innerHTML = `${icon('search', 12)} ${t('setup.scanNodeBtn')}`
     }
   })
 
@@ -567,21 +566,21 @@ function bindEvents(page, nodeOk, detectState) {
     const input = page.querySelector('#input-node-path')
     const resultEl = page.querySelector('#scan-result')
     const dir = input?.value?.trim()
-    if (!dir) { toast('请输入 Node.js 安装目录', 'warning'); return }
+    if (!dir) { toast(t('setup.enterNodeDir'), 'warning'); return }
     resultEl.style.display = 'block'
-    resultEl.innerHTML = '<span style="color:var(--text-tertiary)">检测中...</span>'
+    resultEl.innerHTML = `<span style="color:var(--text-tertiary)">${t('setup.detecting2')}</span>`
     try {
       const result = await api.checkNodeAtPath(dir)
       if (result.installed) {
         await api.saveCustomNodePath(dir)
-        resultEl.innerHTML = `<span style="color:var(--success)">✓ 找到 Node.js ${result.version}，路径已保存</span>`
-        toast('Node.js 路径已保存，正在重新检测...', 'success')
+        resultEl.innerHTML = `<span style="color:var(--success)">✓ ${t('setup.nodeFoundSaved', { version: result.version })}</span>`
+        toast(t('setup.nodeSaved'), 'success')
         setTimeout(() => runDetect(page), 300)
       } else {
-        resultEl.innerHTML = `<span style="color:var(--warning)">该目录下未找到 node 可执行文件，请确认路径正确。</span>`
+        resultEl.innerHTML = `<span style="color:var(--warning)">${t('setup.nodeNotFoundAtPath')}</span>`
       }
     } catch (e) {
-      resultEl.innerHTML = `<span style="color:var(--danger)">检测失败: ${e}</span>`
+      resultEl.innerHTML = `<span style="color:var(--danger)">${t('setup.checkFailed', { err: e })}</span>`
     }
   })
 
@@ -593,10 +592,10 @@ function bindEvents(page, nodeOk, detectState) {
   const sourceRadios = page.querySelectorAll('input[name="install-source"]')
 
   const METHOD_HINTS = {
-    'auto': '自动选择最优安装方式：优先使用独立安装包（零依赖、最快），失败时自动降级到 npm 编译安装。',
-    'standalone-r2': '从晴辰云 CDN 下载独立安装包，自带 Node.js 运行时，无需 npm。国内下载速度最快。',
-    'standalone-github': '从 GitHub Releases 下载独立安装包。CDN 不可用时的备选方案。',
-    'npm': '传统的 npm install 方式，需要本机已安装 Node.js 和 npm，且网络能访问 npm 仓库。',
+    'auto': t('setup.methodHintAuto'),
+    'standalone-r2': t('setup.methodHintR2'),
+    'standalone-github': t('setup.methodHintGithub'),
+    'npm': t('setup.methodHintNpm'),
   }
 
   function updateMethodVisibility() {
@@ -624,7 +623,7 @@ function bindEvents(page, nodeOk, detectState) {
     const source = page.querySelector('input[name="install-source"]:checked')?.value || 'chinese'
     const method = (source === 'official') ? 'npm' : (page.querySelector('#install-method')?.value || 'auto')
     const registry = page.querySelector('#registry-select')?.value
-    const modal = showUpgradeModal('安装 OpenClaw')
+    const modal = showUpgradeModal(t('setup.installOpenclaw'))
     let unlistenLog, unlistenProgress
 
     setUpgrading(true)
@@ -648,15 +647,15 @@ function bindEvents(page, nodeOk, detectState) {
         // 后台任务完成：继续安装 Gateway + 自动配置
         unlistenDone = await listen('upgrade-done', async (e) => {
           cleanup()
-          modal.setDone(typeof e.payload === 'string' ? e.payload : '安装完成')
+          modal.setDone(typeof e.payload === 'string' ? e.payload : t('setup.installComplete'))
 
           // 安装成功后自动安装 Gateway
-          modal.appendLog('正在安装 Gateway 服务...')
+          modal.appendLog(t('setup.installingGateway'))
           try {
             await api.installGateway()
-            modal.appendHtmlLog(`${statusIcon('ok', 14)} Gateway 服务已安装`)
+            modal.appendHtmlLog(`${statusIcon('ok', 14)} ${t('setup.gatewayInstalled')}`)
           } catch (ge) {
-            modal.appendHtmlLog(`${statusIcon('warn', 14)} Gateway 安装失败: ${ge}`)
+            modal.appendHtmlLog(`${statusIcon('warn', 14)} ${t('setup.gatewayInstallFailed', { err: ge })}`)
           }
 
           // 确保 openclaw.json 有关键默认值
@@ -668,7 +667,7 @@ function bindEvents(page, nodeOk, detectState) {
               if (!config.gateway.mode) {
                 config.gateway.mode = 'local'
                 patched = true
-                modal.appendHtmlLog(`${statusIcon('ok', 14)} 已设置 Gateway 运行模式为 local`)
+                modal.appendHtmlLog(`${statusIcon('ok', 14)} ${t('setup.gwModeSet')}`)
               }
               if (!config.tools || config.tools.profile !== 'full') {
                 config.tools = { profile: 'full', sessions: { visibility: 'all' }, ...(config.tools || {}) }
@@ -676,22 +675,22 @@ function bindEvents(page, nodeOk, detectState) {
                 if (!config.tools.sessions) config.tools.sessions = {}
                 config.tools.sessions.visibility = 'all'
                 patched = true
-                modal.appendHtmlLog(`${statusIcon('ok', 14)} 已开启 Agent 工具全部权限`)
+                modal.appendHtmlLog(`${statusIcon('ok', 14)} ${t('setup.toolsFullEnabled')}`)
               }
               if (patched) await api.writeOpenclawConfig(config)
             }
           } catch (ce) {
-            modal.appendHtmlLog(`${statusIcon('warn', 14)} 自动配置失败: ${ce}`)
+            modal.appendHtmlLog(`${statusIcon('warn', 14)} ${t('setup.autoConfigFailed', { err: ce })}`)
           }
 
-          toast('OpenClaw 安装成功', 'success')
+          toast(t('setup.installSuccess'), 'success')
           setTimeout(() => window.location.reload(), 1500)
         })
 
         // 后台任务失败
         unlistenError = await listen('upgrade-error', async (e) => {
           cleanup()
-          const errStr = String(e.payload || '未知错误')
+          const errStr = String(e.payload || t('common.unknown'))
           modal.appendLog(errStr)
           await new Promise(r => setTimeout(r, 150))
           const fullLog = modal.getLogText() + '\n' + errStr
@@ -701,29 +700,29 @@ function bindEvents(page, nodeOk, detectState) {
           if (diagnosis.hint) modal.appendHtmlLog(`${statusIcon('info', 14)} ${diagnosis.hint}`)
           if (diagnosis.command) modal.appendHtmlLog(`${icon('clipboard', 14)} ${diagnosis.command}`)
           if (window.__openAIDrawerWithError) {
-            window.__openAIDrawerWithError({ title: diagnosis.title, error: fullLog, scene: '初始安装 OpenClaw', hint: diagnosis.hint })
+            window.__openAIDrawerWithError({ title: diagnosis.title, error: fullLog, scene: t('setup.installScene'), hint: diagnosis.hint })
           }
         })
 
         // 先设置镜像源
         if (registry) {
-          modal.appendLog(`设置 npm 镜像源: ${registry}`)
+          modal.appendLog(t('setup.setRegistry', { url: registry }))
           try { await api.setNpmRegistry(registry) } catch {}
         }
 
         // 发起后台任务（立即返回）
         await api.upgradeOpenclaw(source, null, method)
-        modal.appendLog('后台安装任务已启动，请等待完成...')
+        modal.appendLog(t('setup.bgTaskStarted'))
       } else {
         // Web 模式：同步等待
-        modal.appendLog('Web 模式：安装日志不可用，请等待完成...')
+        modal.appendLog(t('setup.webModeLogHint'))
         if (registry) {
-          modal.appendLog(`设置 npm 镜像源: ${registry}`)
+          modal.appendLog(t('setup.setRegistry', { url: registry }))
           try { await api.setNpmRegistry(registry) } catch {}
         }
         const msg = await api.upgradeOpenclaw(source, null, method)
         modal.setDone(msg)
-        toast('OpenClaw 安装成功', 'success')
+        toast(t('setup.installSuccess'), 'success')
         setTimeout(() => window.location.reload(), 1500)
         cleanup()
       }

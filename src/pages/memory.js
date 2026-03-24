@@ -4,12 +4,15 @@
 import { api } from '../lib/tauri-api.js'
 import { toast } from '../components/toast.js'
 import { showModal } from '../components/modal.js'
+import { t } from '../lib/i18n.js'
 
-const CATEGORIES = [
-  { key: 'memory', label: '工作记忆', desc: '当前活跃的工作上下文、决策记录和进度追踪' },
-  { key: 'archive', label: '记忆归档', desc: '已归档的历史记忆文件，按时间周期整理' },
-  { key: 'core', label: '核心文件', desc: 'Agent 核心配置文件，如 AGENTS.md、CLAUDE.md 等' },
-]
+function CATEGORIES() {
+  return [
+    { key: 'memory', label: t('memory.catMemory'), desc: t('memory.catMemoryDesc') },
+    { key: 'archive', label: t('memory.catArchive'), desc: t('memory.catArchiveDesc') },
+    { key: 'core', label: t('memory.catCore'), desc: t('memory.catCoreDesc') },
+  ]
+}
 
 export async function render() {
   const page = document.createElement('div')
@@ -17,37 +20,37 @@ export async function render() {
 
   page.innerHTML = `
     <div class="page-header">
-      <h1 class="page-title">记忆文件</h1>
+      <h1 class="page-title">${t('memory.title')}</h1>
       <div class="page-actions" style="display:flex;align-items:center;gap:var(--space-sm)">
-        <label style="font-size:var(--font-size-sm);color:var(--text-tertiary)">Agent:</label>
+        <label style="font-size:var(--font-size-sm);color:var(--text-tertiary)">${t('memory.agentLabel')}</label>
         <select class="form-input" id="agent-select" style="width:auto;min-width:140px"><option value="main">main</option></select>
       </div>
     </div>
     <div class="tab-bar">
-      ${CATEGORIES.map((c, i) => `<div class="tab${i === 0 ? ' active' : ''}" data-tab="${c.key}">${c.label}</div>`).join('')}
+      ${CATEGORIES().map((c, i) => `<div class="tab${i === 0 ? ' active' : ''}" data-tab="${c.key}">${c.label}</div>`).join('')}
     </div>
-    <div class="form-hint" id="category-desc" style="margin-bottom:var(--space-md)">${CATEGORIES[0].desc}</div>
+    <div class="form-hint" id="category-desc" style="margin-bottom:var(--space-md)">${CATEGORIES()[0].desc}</div>
     <div class="memory-layout">
       <div class="memory-sidebar">
         <div style="padding:0 var(--space-sm) var(--space-sm);display:flex;gap:4px">
-          <button class="btn btn-sm btn-secondary" id="btn-new-file" style="flex:1">+ 新建</button>
-          <button class="btn btn-sm btn-danger" id="btn-del-file" disabled style="flex:1">删除</button>
+          <button class="btn btn-sm btn-secondary" id="btn-new-file" style="flex:1">${t('memory.newFile')}</button>
+          <button class="btn btn-sm btn-danger" id="btn-del-file" disabled style="flex:1">${t('memory.deleteFile')}</button>
         </div>
         <div style="padding:0 var(--space-sm) var(--space-sm)">
-          <button class="btn btn-sm btn-secondary" id="btn-export-zip" style="width:100%">打包下载全部</button>
+          <button class="btn btn-sm btn-secondary" id="btn-export-zip" style="width:100%">${t('memory.exportZip')}</button>
         </div>
         <div id="file-tree"><div class="stat-card loading-placeholder" style="height:32px;margin:8px"></div><div class="stat-card loading-placeholder" style="height:32px;margin:8px"></div><div class="stat-card loading-placeholder" style="height:32px;margin:8px"></div></div>
       </div>
       <div class="memory-editor">
         <div class="editor-toolbar">
-          <span id="current-file" style="font-size:var(--font-size-sm);color:var(--text-tertiary)">选择文件查看</span>
+          <span id="current-file" style="font-size:var(--font-size-sm);color:var(--text-tertiary)">${t('memory.selectFile')}</span>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-sm btn-secondary" id="btn-download" disabled>下载</button>
-            <button class="btn btn-sm btn-secondary" id="btn-preview" disabled>预览</button>
-            <button class="btn btn-sm btn-primary" id="btn-save-file" disabled>保存</button>
+            <button class="btn btn-sm btn-secondary" id="btn-download" disabled>${t('memory.download')}</button>
+            <button class="btn btn-sm btn-secondary" id="btn-preview" disabled>${t('memory.preview')}</button>
+            <button class="btn btn-sm btn-primary" id="btn-save-file" disabled>${t('memory.save')}</button>
           </div>
         </div>
-        <textarea class="editor-area" id="file-editor" placeholder="选择左侧文件进行编辑..." disabled></textarea>
+        <textarea class="editor-area" id="file-editor" placeholder="${t('memory.editorPlaceholder')}" disabled></textarea>
       </div>
     </div>
   `
@@ -86,7 +89,7 @@ export async function render() {
       tab.classList.add('active')
       state.category = tab.dataset.tab
       state.currentPath = null
-      const cat = CATEGORIES.find(c => c.key === state.category)
+      const cat = CATEGORIES().find(c => c.key === state.category)
       page.querySelector('#category-desc').textContent = cat?.desc || ''
       resetEditor(page)
       // 显示加载动画
@@ -105,16 +108,16 @@ export async function render() {
   // 新建文件
   page.querySelector('#btn-new-file').onclick = () => {
     showModal({
-      title: '新建记忆文件',
-      fields: [{ name: 'filename', label: '文件名', placeholder: '如 notes.md', hint: '建议使用 .md 格式，文件将保存到当前分类目录下' }],
+      title: t('memory.newFileTitle'),
+      fields: [{ name: 'filename', label: t('memory.newFileLabel'), placeholder: t('memory.newFilePlaceholder'), hint: t('memory.newFileHint') }],
       onConfirm: async ({ filename }) => {
         if (!filename) return
         try {
           await api.writeMemoryFile(filename, `# ${filename}\n\n`, state.category, state.agentId)
-          toast(`已创建 ${filename}`, 'success')
+          toast(t('memory.created', { name: filename }), 'success')
           loadFiles(page, state)
         } catch (e) {
-          toast('创建失败: ' + e, 'error')
+          toast(t('memory.createFailed') + ': ' + e, 'error')
         }
       },
     })
@@ -125,16 +128,16 @@ export async function render() {
     if (!state.currentPath) return
     const name = state.currentPath.split('/').pop()
     const { showConfirm } = await import('../components/modal.js')
-    const yes = await showConfirm(`确定删除 ${name}？`)
+    const yes = await showConfirm(t('memory.confirmDelete', { name }))
     if (!yes) return
     try {
       await api.deleteMemoryFile(state.currentPath, state.agentId)
-      toast(`已删除 ${name}`, 'success')
+      toast(t('memory.deleted', { name }), 'success')
       state.currentPath = null
       resetEditor(page)
       loadFiles(page, state)
     } catch (e) {
-      toast('删除失败: ' + e, 'error')
+      toast(t('memory.deleteFailed') + ': ' + e, 'error')
     }
   }
 
@@ -154,13 +157,13 @@ async function loadFiles(page, state) {
   try {
     const files = await api.listMemoryFiles(state.category, state.agentId)
     if (!files || !files.length) {
-      tree.innerHTML = '<div style="color:var(--text-tertiary);padding:12px">暂无文件</div>'
+      tree.innerHTML = `<div style="color:var(--text-tertiary);padding:12px">${t('memory.noFiles')}</div>`
       return
     }
     renderFileTree(page, state, files)
   } catch (e) {
-    tree.innerHTML = '<div style="color:var(--error);padding:12px">加载失败: ' + e + '</div>'
-    toast('加载文件列表失败: ' + e, 'error')
+    tree.innerHTML = `<div style="color:var(--error);padding:12px">${t('memory.loadFailed')}: ${e}</div>`
+    toast(t('memory.loadListFailed') + ': ' + e, 'error')
   }
 }
 
@@ -191,14 +194,14 @@ async function loadFileContent(page, state) {
   const btnDl = page.querySelector('#btn-download')
 
   editor.disabled = true
-  editor.value = '加载中...'
+  editor.value = t('memory.loading')
   label.textContent = state.currentPath
 
   // 退出预览模式
   editor.style.display = ''
   const previewEl = page.querySelector('#md-preview')
   if (previewEl) previewEl.remove()
-  btnPreview.textContent = '预览'
+  btnPreview.textContent = t('memory.preview')
 
   try {
     const content = await api.readMemoryFile(state.currentPath, state.agentId)
@@ -209,8 +212,8 @@ async function loadFileContent(page, state) {
     btnDel.disabled = false
     btnDl.disabled = false
   } catch (e) {
-    editor.value = '读取失败: ' + e
-    toast('读取文件失败: ' + e, 'error')
+    editor.value = t('memory.readFailed') + ': ' + e
+    toast(t('memory.readFileFailed') + ': ' + e, 'error')
   }
 }
 
@@ -221,10 +224,10 @@ function resetEditor(page) {
   editor.style.display = ''
   const previewEl = page.querySelector('#md-preview')
   if (previewEl) previewEl.remove()
-  page.querySelector('#current-file').textContent = '选择文件查看'
+  page.querySelector('#current-file').textContent = t('memory.selectFile')
   page.querySelector('#btn-save-file').disabled = true
   page.querySelector('#btn-preview').disabled = true
-  page.querySelector('#btn-preview').textContent = '预览'
+  page.querySelector('#btn-preview').textContent = t('memory.preview')
   page.querySelector('#btn-del-file').disabled = true
   page.querySelector('#btn-download').disabled = true
 }
@@ -234,9 +237,9 @@ async function saveFile(page, state) {
   const content = page.querySelector('#file-editor').value
   try {
     await api.writeMemoryFile(state.currentPath, content, null, state.agentId)
-    toast('文件已保存', 'success')
+    toast(t('memory.fileSaved'), 'success')
   } catch (e) {
-    toast('保存失败: ' + e, 'error')
+    toast(t('memory.saveFailed') + ': ' + e, 'error')
   }
 }
 
@@ -249,7 +252,7 @@ function togglePreview(page) {
     // 退出预览
     previewEl.remove()
     editor.style.display = ''
-    btn.textContent = '预览'
+    btn.textContent = t('memory.preview')
   } else {
     // 进入预览
     const md = editor.value
@@ -259,7 +262,7 @@ function togglePreview(page) {
     previewEl.innerHTML = renderMarkdown(md)
     editor.style.display = 'none'
     editor.parentElement.appendChild(previewEl)
-    btn.textContent = '编辑'
+    btn.textContent = t('memory.edit')
   }
 }
 
@@ -296,27 +299,27 @@ async function downloadCurrentFile(page, state) {
     const content = page.querySelector('#file-editor').value
     const filename = state.currentPath.split('/').pop()
     triggerDownload(filename, content)
-    toast(`已下载 ${filename}`, 'success')
+    toast(t('memory.downloaded', { name: filename }), 'success')
   } catch (e) {
-    toast('下载失败: ' + e, 'error')
+    toast(t('memory.downloadFailed') + ': ' + e, 'error')
   }
 }
 
 async function exportZip(state) {
   try {
     const zipPath = await api.exportMemoryZip(state.category, state.agentId)
-    const label = CATEGORIES.find(c => c.key === state.category)?.label || state.category
+    const label = CATEGORIES().find(c => c.key === state.category)?.label || state.category
     // 尝试用 Tauri shell open 打开文件所在目录
     try {
       const { open } = await import('@tauri-apps/plugin-shell')
       const dir = zipPath.substring(0, zipPath.lastIndexOf('/')) || zipPath
       await open(dir)
-      toast(`已导出: ${label} → ${zipPath}`, 'success')
+      toast(t('memory.exported', { label, path: zipPath }), 'success')
     } catch {
       // fallback：仅显示路径
-      toast(`已导出: ${label} → ${zipPath}`, 'success')
+      toast(t('memory.exported', { label, path: zipPath }), 'success')
     }
   } catch (e) {
-    toast('打包下载失败: ' + e, 'error')
+    toast(t('memory.exportFailed') + ': ' + e, 'error')
   }
 }

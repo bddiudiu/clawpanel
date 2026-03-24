@@ -7,6 +7,7 @@ import { toast } from '../components/toast.js'
 import { showUpgradeModal, showConfirm } from '../components/modal.js'
 import { setUpgrading } from '../lib/app-state.js'
 import { icon, statusIcon } from '../lib/icons.js'
+import { t } from '../lib/i18n.js'
 
 export async function render() {
   const page = document.createElement('div')
@@ -17,7 +18,7 @@ export async function render() {
       <img src="/images/logo-brand.png" alt="ClawPanel" style="height:48px;width:auto">
       <div>
         <h1 class="page-title" style="margin:0">ClawPanel</h1>
-        <p class="page-desc" style="margin:0">OpenClaw 可视化管理面板 · <a href="https://claw.qt.cool" target="_blank" rel="noopener" style="color:var(--primary)">claw.qt.cool</a></p>
+        <p class="page-desc" style="margin:0">${t('about.subtitle')} · <a href="https://claw.qt.cool" target="_blank" rel="noopener" style="color:var(--primary)">claw.qt.cool</a></p>
       </div>
     </div>
     <div class="stat-cards" id="version-cards">
@@ -26,28 +27,28 @@ export async function render() {
       <div class="stat-card loading-placeholder"></div>
     </div>
     <div class="config-section">
-      <div class="config-section-title">社群交流</div>
+      <div class="config-section-title">${t('about.sectionCommunity')}</div>
       <div id="community-section"></div>
     </div>
     <div class="config-section">
-      <div class="config-section-title">相关项目</div>
+      <div class="config-section-title">${t('about.sectionProjects')}</div>
       <div id="projects-list"></div>
     </div>
     <div class="config-section">
-      <div class="config-section-title">参与贡献</div>
+      <div class="config-section-title">${t('about.sectionContribute')}</div>
       <div id="contribute-section"></div>
     </div>
     <div class="config-section">
-      <div class="config-section-title">快捷链接</div>
+      <div class="config-section-title">${t('about.sectionLinks')}</div>
       <div id="links-list"></div>
     </div>
     <div class="config-section">
-      <div class="config-section-title">关于我们</div>
+      <div class="config-section-title">${t('about.sectionAboutUs')}</div>
       <div id="company-section"></div>
     </div>
     <div class="config-section" style="color:var(--text-tertiary);font-size:var(--font-size-xs)">
-      <p>ClawPanel 基于 Tauri v2 构建，前端 Vanilla JS + Vite，后端 Rust。</p>
-      <p style="margin-top:8px">MIT License &copy; 2026 武汉晴辰天下网络科技有限公司</p>
+      <p>${t('about.techStack')}</p>
+      <p style="margin-top:8px">${t('about.copyright')}</p>
     </div>
   `
 
@@ -78,18 +79,18 @@ async function loadData(page) {
     }
 
     // 异步检查前端热更新
-    let panelUpdateHtml = '<span style="color:var(--text-tertiary)">检查更新中...</span>'
+    let panelUpdateHtml = `<span style="color:var(--text-tertiary)">${t('about.checkingUpdate')}</span>`
     checkHotUpdate(cards, panelVersion)
 
     const isInstalled = !!version.current
-    const sourceLabel = version.source === 'official' ? '官方版' : '汉化版'
+    const sourceLabel = version.source === 'official' ? t('about.official') : t('about.chinese')
     const btnSm = 'padding:2px 8px;font-size:var(--font-size-xs)'
     const hasRecommended = !!version.recommended
     const aheadOfRecommended = isInstalled && hasRecommended && !!version.ahead_of_recommended
     const driftFromRecommended = isInstalled && hasRecommended && !version.is_recommended && !aheadOfRecommended
     const policyRiskHint = aheadOfRecommended
-      ? `检测到你本地安装的是高于推荐稳定版的 ${version.current}，可能存在接口、事件或配置兼容性问题。建议回退到 ${version.recommended}；如果你要继续使用高版本，请自行验证兼容性并关注 issue / release。`
-      : '当前面板默认只保证推荐稳定版的兼容性；如果你要尝试其他版本或预览版，请自行验证兼容性。若希望面板尽快支持最新版特性，欢迎提交 issue 告诉我们。'
+      ? t('about.policyAhead', { current: version.current, recommended: version.recommended })
+      : t('about.policyDefault')
 
     cards.innerHTML = `
       <div class="stat-card">
@@ -99,37 +100,37 @@ async function loadData(page) {
       </div>
       <div class="stat-card">
         <div class="stat-card-header"><span class="stat-card-label">OpenClaw · ${sourceLabel}</span></div>
-        <div class="stat-card-value">${version.current || '未安装'}</div>
+        <div class="stat-card-value">${version.current || t('about.notInstalled')}</div>
         <div class="stat-card-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           ${isInstalled && hasRecommended
             ? (aheadOfRecommended
-              ? `<span style="color:var(--warning,#f59e0b)">当前版本高于推荐稳定版: ${version.recommended}</span>
-                 <button class="btn btn-primary btn-sm" id="btn-apply-recommended" style="${btnSm}">回退到推荐版</button>`
+              ? `<span style="color:var(--warning,#f59e0b)">${t('about.aheadOfRecommended', { ver: version.recommended })}</span>
+                 <button class="btn btn-primary btn-sm" id="btn-apply-recommended" style="${btnSm}">${t('about.rollbackToRecommended')}</button>`
               : driftFromRecommended
-              ? `<span style="color:var(--accent)">推荐稳定版: ${version.recommended}</span>
-                 <button class="btn btn-primary btn-sm" id="btn-apply-recommended" style="${btnSm}">切换到推荐版</button>`
-              : '<span style="color:var(--success)">已是推荐稳定版</span>')
+              ? `<span style="color:var(--accent)">${t('about.recommendedStable', { ver: version.recommended })}</span>
+                 <button class="btn btn-primary btn-sm" id="btn-apply-recommended" style="${btnSm}">${t('about.switchToRecommended')}</button>`
+              : `<span style="color:var(--success)">${t('about.isRecommended')}</span>`)
             : ''}
-          ${version.latest_update_available && version.latest ? `<span style="color:var(--text-tertiary)">最新上游: ${version.latest}</span>` : ''}
+          ${version.latest_update_available && version.latest ? `<span style="color:var(--text-tertiary)">${t('about.latestUpstream', { ver: version.latest })}</span>` : ''}
           <button class="btn btn-${isInstalled ? 'secondary' : 'primary'} btn-sm" id="btn-version-mgmt" style="${btnSm}">
-            ${isInstalled ? '切换版本' : '安装 OpenClaw'}
+            ${isInstalled ? t('about.switchVersion') : t('about.installOpenclaw')}
           </button>
-          ${isInstalled ? `<button class="btn btn-secondary btn-sm" id="btn-uninstall" style="${btnSm};color:var(--error)">卸载</button>` : ''}
+          ${isInstalled ? `<button class="btn btn-secondary btn-sm" id="btn-uninstall" style="${btnSm};color:var(--error)">${t('about.uninstall')}</button>` : ''}
         </div>
         <div style="margin-top:8px;font-size:var(--font-size-xs);color:var(--text-tertiary);line-height:1.6">
           ${policyRiskHint}
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-header"><span class="stat-card-label">安装路径</span></div>
-        <div class="stat-card-value" style="font-size:var(--font-size-sm);word-break:break-all">${install.path || '未知'}</div>
-        <div class="stat-card-meta">${install.installed ? '配置文件存在' : '未找到配置文件'}</div>
+        <div class="stat-card-header"><span class="stat-card-label">${t('about.installPath')}</span></div>
+        <div class="stat-card-value" style="font-size:var(--font-size-sm);word-break:break-all">${install.path || t('common.unknown')}</div>
+        <div class="stat-card-meta">${install.installed ? t('about.configExists') : t('about.configNotFound')}</div>
       </div>
     `
 
     const applyRecommendedBtn = cards.querySelector('#btn-apply-recommended')
     if (applyRecommendedBtn && version.recommended) {
-      applyRecommendedBtn.onclick = () => doInstall(page, aheadOfRecommended ? '回退到推荐稳定版' : '切换到推荐稳定版', version.source, version.recommended)
+      applyRecommendedBtn.onclick = () => doInstall(page, aheadOfRecommended ? t('about.rollbackToRecommendedStable') : t('about.switchToRecommendedStable'), version.source, version.recommended)
     }
 
     // 版本管理 / 安装
@@ -142,11 +143,11 @@ async function loadData(page) {
     const uninstallBtn = cards.querySelector('#btn-uninstall')
     if (uninstallBtn) {
       uninstallBtn.onclick = async () => {
-        const confirmed = await showConfirm('确定要卸载 OpenClaw 吗？\n\n这将停止 Gateway 服务并卸载 npm 全局包。\n配置文件（~/.openclaw/）默认保留，可稍后手动删除。')
+        const confirmed = await showConfirm(t('about.confirmUninstall'))
         if (!confirmed) return
-        const modal = showUpgradeModal('卸载 OpenClaw')
+        const modal = showUpgradeModal(t('about.uninstallTitle'))
         modal.onClose(() => loadData(page))
-        modal.appendLog('开始卸载 OpenClaw...')
+        modal.appendLog(t('about.uninstallStarting'))
         let unlistenLog, unlistenProgress, unlistenDone, unlistenError
         const cleanup = () => { unlistenLog?.(); unlistenProgress?.(); unlistenDone?.(); unlistenError?.() }
         try {
@@ -154,23 +155,23 @@ async function loadData(page) {
             const { listen } = await import('@tauri-apps/api/event')
             unlistenLog = await listen('upgrade-log', (e) => modal.appendLog(e.payload))
             unlistenProgress = await listen('upgrade-progress', (e) => modal.setProgress(e.payload))
-            unlistenDone = await listen('upgrade-done', (e) => { cleanup(); modal.setDone(typeof e.payload === 'string' ? e.payload : '卸载完成') })
-            unlistenError = await listen('upgrade-error', (e) => { cleanup(); modal.setError('卸载失败: ' + (e.payload || '未知错误')) })
+            unlistenDone = await listen('upgrade-done', (e) => { cleanup(); modal.setDone(typeof e.payload === 'string' ? e.payload : t('about.uninstallDone')) })
+            unlistenError = await listen('upgrade-error', (e) => { cleanup(); modal.setError(t('about.uninstallFailed') + (e.payload || t('common.unknown'))) })
             await api.uninstallOpenclaw(false)
-            modal.appendLog('后台卸载任务已启动...')
+            modal.appendLog(t('about.uninstallTaskStarted'))
           } else {
             const msg = await api.uninstallOpenclaw(false)
-            modal.setDone(typeof msg === 'string' ? msg : '卸载完成')
+            modal.setDone(typeof msg === 'string' ? msg : t('about.uninstallDone'))
             cleanup()
           }
         } catch (e) {
           cleanup()
-          modal.setError('卸载失败: ' + (e?.message || e))
+          modal.setError(t('about.uninstallFailed') + (e?.message || e))
         }
       }
     }
   } catch {
-    cards.innerHTML = '<div class="stat-card"><div class="stat-card-label">加载失败</div></div>'
+    cards.innerHTML = `<div class="stat-card"><div class="stat-card-label">${t('common.loadFailed')}</div></div>`
   }
 }
 
@@ -183,29 +184,29 @@ async function showVersionPicker(page, currentVersion) {
   overlay.className = 'modal-overlay'
   overlay.innerHTML = `
     <div class="modal" style="max-width:460px">
-      <div class="modal-title">${isInstalled ? '切换版本' : '安装 OpenClaw'}</div>
+      <div class="modal-title">${isInstalled ? t('about.switchVersion') : t('about.installOpenclaw')}</div>
       <div style="display:flex;flex-direction:column;gap:16px;margin:16px 0">
         <div>
-          <label style="font-size:var(--font-size-sm);color:var(--text-secondary);display:block;margin-bottom:8px">版本</label>
+          <label style="font-size:var(--font-size-sm);color:var(--text-secondary);display:block;margin-bottom:8px">${t('about.versionLabel')}</label>
           <div style="display:flex;gap:8px">
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);font-size:var(--font-size-sm);flex:1;justify-content:center;transition:all .15s" id="lbl-official">
               <input type="radio" name="oc-source" value="official" ${currentVersion.source !== 'chinese' ? 'checked' : ''} style="accent-color:var(--primary)">
-              原版
+              ${t('about.official')}
             </label>
             <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);font-size:var(--font-size-sm);flex:1;justify-content:center;transition:all .15s" id="lbl-chinese">
               <input type="radio" name="oc-source" value="chinese" ${currentVersion.source === 'chinese' ? 'checked' : ''} style="accent-color:var(--primary)">
-              汉化版
+              ${t('about.chinese')}
             </label>
           </div>
         </div>
         <div>
-          <label style="font-size:var(--font-size-sm);color:var(--text-secondary);display:block;margin-bottom:8px">选择版本号</label>
+          <label style="font-size:var(--font-size-sm);color:var(--text-secondary);display:block;margin-bottom:8px">${t('about.selectVersion')}</label>
           <select id="oc-version-select" class="input" style="width:100%;padding:8px 12px;font-size:var(--font-size-sm)">
-            <option value="">加载中...</option>
+            <option value="">${t('common.loading')}</option>
           </select>
         </div>
         <div style="font-size:var(--font-size-xs);color:var(--text-tertiary);line-height:1.6;padding:10px 12px;border-radius:8px;background:var(--bg-tertiary)">
-          默认建议使用当前面板绑定的推荐稳定版。若手动切换到其它版本，尤其是预览版/最新版，请自行验证兼容性；如果你希望面板优先适配最新版功能，欢迎提交 issue。
+          ${t('about.versionPickerHint')}
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;min-height:18px">
           <div id="oc-action-hint" style="font-size:var(--font-size-xs);color:var(--text-tertiary)"></div>
@@ -213,8 +214,8 @@ async function showVersionPicker(page, currentVersion) {
         </div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary btn-sm" data-action="cancel">取消</button>
-        <button class="btn btn-primary btn-sm" data-action="confirm" disabled id="oc-confirm-btn">${isInstalled ? '切换' : '安装'}</button>
+        <button class="btn btn-secondary btn-sm" data-action="cancel">${t('common.cancel')}</button>
+        <button class="btn btn-primary btn-sm" data-action="confirm" disabled id="oc-confirm-btn">${isInstalled ? t('about.btnSwitch') : t('about.btnInstall')}</button>
       </div>
     </div>
   `
@@ -247,20 +248,20 @@ async function showVersionPicker(page, currentVersion) {
     const targetSource = currentSelect
     const targetVer = select.value
     if (!targetVer || targetVer === '') { hintEl.textContent = ''; confirmBtn.disabled = true; return }
-    const targetTag = select.selectedIndex === 0 ? '（推荐稳定版）' : '（需自测兼容性）'
+    const targetTag = select.selectedIndex === 0 ? t('about.tagRecommended') : t('about.tagNeedTest')
 
     const sameSource = targetSource === (currentVersion.source === 'official' ? 'official' : 'chinese')
 
     if (!isInstalled) {
-      confirmBtn.textContent = '安装'
-      hintEl.textContent = `将安装 ${targetSource === 'official' ? '原版' : '汉化版'} ${targetVer}${targetTag}`
+      confirmBtn.textContent = t('about.btnInstall')
+      hintEl.textContent = t('about.hintInstall', { source: targetSource === 'official' ? t('about.official') : t('about.chinese'), ver: targetVer, tag: targetTag })
       confirmBtn.disabled = false
       return
     }
 
     if (!sameSource) {
-      confirmBtn.textContent = '切换'
-      hintEl.innerHTML = `当前: <strong>${currentVersion.source === 'official' ? '原版' : '汉化版'} ${currentVersion.current}</strong> → <strong>${targetSource === 'official' ? '原版' : '汉化版'} ${targetVer}</strong>${targetTag}`
+      confirmBtn.textContent = t('about.btnSwitch')
+      hintEl.innerHTML = `${t('about.hintCurrent')}: <strong>${currentVersion.source === 'official' ? t('about.official') : t('about.chinese')} ${currentVersion.current}</strong> → <strong>${targetSource === 'official' ? t('about.official') : t('about.chinese')} ${targetVer}</strong>${targetTag}`
       confirmBtn.disabled = false
       return
     }
@@ -276,15 +277,15 @@ async function showVersionPicker(page, currentVersion) {
     }
 
     if (cmp === 0) {
-      confirmBtn.textContent = '重新安装'
-      hintEl.textContent = `当前已是 ${targetVer}${targetTag}`
+      confirmBtn.textContent = t('about.btnReinstall')
+      hintEl.textContent = t('about.hintAlreadyVersion', { ver: targetVer, tag: targetTag })
       confirmBtn.disabled = false
     } else if (cmp > 0) {
-      confirmBtn.textContent = '升级'
+      confirmBtn.textContent = t('about.btnUpgrade')
       hintEl.innerHTML = `<span style="color:var(--accent)">${currentVersion.current} → ${targetVer}${targetTag}</span>`
       confirmBtn.disabled = false
     } else {
-      confirmBtn.textContent = '降级'
+      confirmBtn.textContent = t('about.btnDowngrade')
       hintEl.innerHTML = `<span style="color:var(--warning,#f59e0b)">${currentVersion.current} → ${targetVer}${targetTag}</span>`
       confirmBtn.disabled = false
     }
@@ -293,7 +294,7 @@ async function showVersionPicker(page, currentVersion) {
   let showNightly = false
 
   async function loadVersions(source) {
-    select.innerHTML = '<option value="">加载中...</option>'
+    select.innerHTML = `<option value="">${t('common.loading')}</option>`
     confirmBtn.disabled = true
     hintEl.textContent = ''
     try {
@@ -302,7 +303,7 @@ async function showVersionPicker(page, currentVersion) {
       }
       const allVersions = versionsCache[source]
       if (!allVersions.length) {
-        select.innerHTML = '<option value="">未找到可用版本</option>'
+        select.innerHTML = `<option value="">${t('about.noVersions')}</option>`
         return
       }
       const stable = allVersions.filter(v => !v.includes('nightly') && !v.includes('canary') && !v.includes('alpha') && !v.includes('beta') && !v.includes('rc') && !v.includes('dev') && !v.includes('next'))
@@ -310,7 +311,7 @@ async function showVersionPicker(page, currentVersion) {
       const nightlyCount = allVersions.length - stable.length
       select.innerHTML = versions.map((v, idx) => {
         const isCurrent = isInstalled && v === currentVersion.current && source === (currentVersion.source === 'official' ? 'official' : 'chinese')
-        return `<option value="${v}">${v}${idx === 0 ? ' (推荐)' : ''}${isCurrent ? ' (当前)' : ''}</option>`
+        return `<option value="${v}">${v}${idx === 0 ? ` (${t('about.recommended')})` : ''}${isCurrent ? ` (${t('about.current')})` : ''}</option>`
       }).join('')
       // nightly 切换提示
       const toggleEl = overlay.querySelector('#nightly-toggle')
@@ -318,8 +319,8 @@ async function showVersionPicker(page, currentVersion) {
         if (nightlyCount > 0) {
           toggleEl.style.display = ''
           toggleEl.innerHTML = showNightly
-            ? `<a href="#" id="btn-toggle-nightly" style="color:var(--primary);text-decoration:none;font-size:var(--font-size-xs)">隐藏预览版 (${nightlyCount})</a>`
-            : `<a href="#" id="btn-toggle-nightly" style="color:var(--text-tertiary);text-decoration:none;font-size:var(--font-size-xs)">显示预览版 (${nightlyCount})</a>`
+            ? `<a href="#" id="btn-toggle-nightly" style="color:var(--primary);text-decoration:none;font-size:var(--font-size-xs)">${t('about.hidePreview', { count: nightlyCount })}</a>`
+            : `<a href="#" id="btn-toggle-nightly" style="color:var(--text-tertiary);text-decoration:none;font-size:var(--font-size-xs)">${t('about.showPreview', { count: nightlyCount })}</a>`
           toggleEl.querySelector('#btn-toggle-nightly').onclick = (e) => { e.preventDefault(); showNightly = !showNightly; loadVersions(source) }
         } else {
           toggleEl.style.display = 'none'
@@ -327,7 +328,7 @@ async function showVersionPicker(page, currentVersion) {
       }
       updateHint()
     } catch (e) {
-      select.innerHTML = `<option value="">加载失败: ${e.message || e}</option>`
+      select.innerHTML = `<option value="">${t('common.loadFailed')}: ${e.message || e}</option>`
     }
   }
 
@@ -375,12 +376,12 @@ async function doInstall(page, title, source, version) {
 
       unlistenDone = await listen('upgrade-done', (e) => {
         cleanup()
-        modal.setDone(typeof e.payload === 'string' ? e.payload : '操作完成')
+        modal.setDone(typeof e.payload === 'string' ? e.payload : t('about.operationDone'))
       })
 
       unlistenError = await listen('upgrade-error', async (e) => {
         cleanup()
-        const errStr = String(e.payload || '未知错误')
+        const errStr = String(e.payload || t('common.unknown'))
         modal.appendLog(errStr)
         const { diagnoseInstallError } = await import('../lib/error-diagnosis.js')
         const fullLog = modal.getLogText() + '\n' + errStr
@@ -395,11 +396,11 @@ async function doInstall(page, title, source, version) {
       })
 
       await api.upgradeOpenclaw(source, version)
-      modal.appendLog('后台任务已启动，请等待完成...')
+      modal.appendLog(t('about.taskStarted'))
     } else {
-      modal.appendLog('Web 模式：安装过程日志不可用，请等待完成...')
+      modal.appendLog(t('about.webModeNoLog'))
       const msg = await api.upgradeOpenclaw(source, version)
-      modal.setDone(typeof msg === 'string' ? msg : (msg?.message || '操作完成'))
+      modal.setDone(typeof msg === 'string' ? msg : (msg?.message || t('about.operationDone')))
       cleanup()
     }
   } catch (e) {
@@ -424,9 +425,9 @@ async function checkHotUpdate(cards, panelVersion) {
       // 已下载更新，等待重载
       const ver = info.manifest?.version || info.latestVersion || ''
       meta.innerHTML = `
-        <span style="color:var(--accent)">v${ver} 已就绪</span>
-        <button class="btn btn-primary btn-sm" id="btn-hot-reload" style="padding:2px 8px;font-size:var(--font-size-xs)">重载应用</button>
-        <button class="btn btn-secondary btn-sm" id="btn-hot-rollback" style="padding:2px 8px;font-size:var(--font-size-xs)">回退</button>
+        <span style="color:var(--accent)">v${ver} ${t('about.updateReady')}</span>
+        <button class="btn btn-primary btn-sm" id="btn-hot-reload" style="padding:2px 8px;font-size:var(--font-size-xs)">${t('about.reloadApp')}</button>
+        <button class="btn btn-secondary btn-sm" id="btn-hot-rollback" style="padding:2px 8px;font-size:var(--font-size-xs)">${t('about.rollback')}</button>
       `
       meta.querySelector('#btn-hot-reload')?.addEventListener('click', () => {
         window.location.reload()
@@ -434,10 +435,10 @@ async function checkHotUpdate(cards, panelVersion) {
       meta.querySelector('#btn-hot-rollback')?.addEventListener('click', async () => {
         try {
           await api.rollbackFrontendUpdate()
-          toast('已回退到内嵌版本，重载中...', 'success')
+          toast(t('about.rollbackSuccess'), 'success')
           setTimeout(() => window.location.reload(), 800)
         } catch (e) {
-          toast('回退失败: ' + (e.message || e), 'error')
+          toast(t('about.rollbackFailed') + (e.message || e), 'error')
         }
       })
     } else if (info.hasUpdate) {
@@ -446,32 +447,32 @@ async function checkHotUpdate(cards, panelVersion) {
       const manifest = info.manifest || {}
       const changelog = manifest.changelog || ''
       meta.innerHTML = `
-        <span style="color:var(--accent)">新版本: v${ver}</span>
+        <span style="color:var(--accent)">${t('about.newVersion')}: v${ver}</span>
         ${changelog ? `<span style="color:var(--text-tertiary);font-size:var(--font-size-xs)">${changelog}</span>` : ''}
-        <button class="btn btn-primary btn-sm" id="btn-hot-download" style="padding:2px 8px;font-size:var(--font-size-xs)">热更新</button>
-        <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/releases" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">完整安装包</a>
+        <button class="btn btn-primary btn-sm" id="btn-hot-download" style="padding:2px 8px;font-size:var(--font-size-xs)">${t('about.hotUpdate')}</button>
+        <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/releases" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">${t('about.fullInstaller')}</a>
       `
       meta.querySelector('#btn-hot-download')?.addEventListener('click', async () => {
         const btn = meta.querySelector('#btn-hot-download')
-        if (btn) { btn.disabled = true; btn.textContent = '下载中...' }
+        if (btn) { btn.disabled = true; btn.textContent = t('about.downloading') }
         try {
           await api.downloadFrontendUpdate(manifest.url, manifest.hash || '')
-          toast('更新下载完成，点击「重载应用」生效', 'success')
+          toast(t('about.downloadDone'), 'success')
           checkHotUpdate(cards, panelVersion)
         } catch (e) {
-          toast('下载失败: ' + (e.message || e), 'error')
-          if (btn) { btn.disabled = false; btn.textContent = '重试' }
+          toast(t('about.downloadFailed') + (e.message || e), 'error')
+          if (btn) { btn.disabled = false; btn.textContent = t('about.retry') }
         }
       })
     } else if (!info.compatible) {
-      meta.innerHTML = '<span style="color:var(--text-tertiary)">需要更新完整安装包</span> <a class="btn btn-primary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">前往官网下载</a> <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/releases" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">GitHub</a>'
+      meta.innerHTML = `<span style="color:var(--text-tertiary)">${t('about.needFullUpdate')}</span> <a class="btn btn-primary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">${t('about.goToWebsite')}</a> <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/releases" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">GitHub</a>`
     } else {
-      meta.innerHTML = '<span style="color:var(--success)">已是最新</span>'
+      meta.innerHTML = `<span style="color:var(--success)">${t('about.upToDate')}</span>`
     }
   } catch (err) {
     const meta = el()
     if (!meta) return
-    meta.innerHTML = `<span style="color:var(--text-tertiary)">暂无法检查更新</span> <a class="btn btn-secondary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">前往官网下载</a>`
+    meta.innerHTML = `<span style="color:var(--text-tertiary)">${t('about.checkUpdateFailed')}</span> <a class="btn btn-secondary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="padding:2px 8px;font-size:var(--font-size-xs)">${t('about.goToWebsite')}</a>`
   }
 }
 
@@ -492,32 +493,32 @@ function renderCommunity(page) {
   el.innerHTML = `
     <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
       <div style="text-align:center">
-        <img src="/images/OpenClaw-QQ.png" alt="QQ 交流群" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary)">
-        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">QQ 交流群</div>
+        <img src="/images/OpenClaw-QQ.png" alt="${t('about.qqGroup')}" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary)">
+        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">${t('about.qqGroup')}</div>
       </div>
       <div style="text-align:center">
-        <img src="/images/OpenClawWx.png" alt="微信交流群" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary)">
-        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">微信交流群</div>
+        <img src="/images/OpenClawWx.png" alt="${t('about.wechatGroup')}" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary)">
+        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">${t('about.wechatGroup')}</div>
       </div>
       <div style="text-align:center">
-        <img src="https://qt.cool/c/OpenClawDY/qr.png" alt="抖音交流群" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary);object-fit:contain;background:#fff">
-        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">抖音交流群</div>
+        <img src="https://qt.cool/c/OpenClawDY/qr.png" alt="${t('about.douyinGroup')}" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary);object-fit:contain;background:#fff">
+        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">${t('about.douyinGroup')}</div>
       </div>
       <div style="text-align:center">
-        <img src="https://qt.cool/c/feishu/qr.png" alt="飞书交流群" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary);object-fit:contain;background:#fff">
-        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">飞书交流群</div>
+        <img src="https://qt.cool/c/feishu/qr.png" alt="${t('about.feishuGroup')}" style="width:140px;height:140px;border-radius:var(--radius-md);border:1px solid var(--border-primary);object-fit:contain;background:#fff">
+        <div style="font-size:var(--font-size-sm);margin-top:8px;color:var(--text-secondary)">${t('about.feishuGroup')}</div>
       </div>
       <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;padding-top:4px">
-        <div style="font-size:var(--font-size-sm);color:var(--text-secondary)">扫码或点击链接加入交流群，反馈问题、获取帮助</div>
+        <div style="font-size:var(--font-size-sm);color:var(--text-secondary)">${t('about.communityDesc')}</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
-          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/OpenClaw" target="_blank" rel="noopener">加入 QQ 群</a>
-          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/OpenClawWx" target="_blank" rel="noopener">加入微信群</a>
-          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/OpenClawDY" target="_blank" rel="noopener">加入抖音群</a>
-          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/feishu" target="_blank" rel="noopener">加入飞书群</a>
-          <a class="btn btn-secondary btn-sm" href="https://yb.tencent.com/gp/i/LsvIw7mdR7Lb" target="_blank" rel="noopener">元宝派社群</a>
+          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/OpenClaw" target="_blank" rel="noopener">${t('about.joinQQ')}</a>
+          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/OpenClawWx" target="_blank" rel="noopener">${t('about.joinWechat')}</a>
+          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/OpenClawDY" target="_blank" rel="noopener">${t('about.joinDouyin')}</a>
+          <a class="btn btn-primary btn-sm" href="https://qt.cool/c/feishu" target="_blank" rel="noopener">${t('about.joinFeishu')}</a>
+          <a class="btn btn-secondary btn-sm" href="https://yb.tencent.com/gp/i/LsvIw7mdR7Lb" target="_blank" rel="noopener">${t('about.joinYuanbao')}</a>
         </div>
         <div style="font-size:var(--font-size-xs);color:var(--text-tertiary);margin-top:8px">
-          2000 人大群，满员自动切换 · 碰到问题可直接在群内反馈
+          ${t('about.communityNote')}
         </div>
       </div>
     </div>
@@ -527,28 +528,28 @@ function renderCommunity(page) {
 const PROJECTS = [
   {
     name: 'OpenClaw',
-    desc: 'AI Agent 框架，支持多模型协作、工具调用、记忆管理',
+    desc: t('about.projectOpenClaw'),
     url: 'https://github.com/openclaw/openclaw',
   },
   {
     name: 'OpenClaw-zh',
-    desc: '我们维护的 OpenClaw 汉化版，3000+ Star，中文界面 + 国内镜像优化',
+    desc: t('about.projectOpenClawZh'),
     url: 'https://github.com/1186258278/OpenClawChineseTranslation',
   },
   {
     name: 'ClawPanel',
-    desc: 'OpenClaw 可视化管理面板，Tauri v2 桌面应用',
+    desc: t('about.projectClawPanel'),
     url: 'https://github.com/qingchencloud/clawpanel',
     gitee: 'https://gitee.com/QtCodeCreators/clawpanel',
   },
   {
     name: 'ClawApp',
-    desc: '跨平台移动聊天客户端，H5 + 代理服务器架构，支持离线和流式传输',
+    desc: t('about.projectClawApp'),
     url: 'https://github.com/qingchencloud/clawapp',
   },
   {
     name: 'cftunnel',
-    desc: '全协议内网穿透工具，Cloud 模式免费 HTTP/WS + Relay 模式自建中继',
+    desc: t('about.projectCftunnel'),
     url: 'https://github.com/qingchencloud/cftunnel',
   },
 ]
@@ -565,33 +566,33 @@ function renderProjects(page) {
       </div>
       <div class="service-actions">
         <a class="btn btn-secondary btn-sm" href="${p.url}" target="_blank" rel="noopener">GitHub</a>
-        ${p.gitee ? `<a class="btn btn-secondary btn-sm" href="${p.gitee}" target="_blank" rel="noopener">国内镜像</a>` : ''}
+        ${p.gitee ? `<a class="btn btn-secondary btn-sm" href="${p.gitee}" target="_blank" rel="noopener">${t('about.domesticMirror')}</a>` : ''}
       </div>
     </div>
   `).join('')
 }
 
 const LINKS = [
-  { label: 'Claw 项目官网', url: 'https://claw.qt.cool', primary: true },
-  { label: 'OpenClaw 中文翻译', url: 'https://github.com/1186258278/OpenClawChineseTranslation' },
-  { label: 'ClawApp 手机客户端', url: 'https://clawapp.qt.cool' },
-  { label: 'cftunnel 内网穿透', url: 'https://cftunnel.qt.cool' },
+  { label: t('about.linkWebsite'), url: 'https://claw.qt.cool', primary: true },
+  { label: t('about.linkOpenClawZh'), url: 'https://github.com/1186258278/OpenClawChineseTranslation' },
+  { label: t('about.linkClawApp'), url: 'https://clawapp.qt.cool' },
+  { label: t('about.linkCftunnel'), url: 'https://cftunnel.qt.cool' },
 ]
 
 function renderContribute(page) {
   const el = page.querySelector('#contribute-section')
   el.innerHTML = `
     <div style="font-size:var(--font-size-sm);color:var(--text-secondary);margin-bottom:12px">
-      ClawPanel 是开源项目，欢迎参与贡献！遇到问题请提 Issue，功能建议和代码改进欢迎提 PR。
+      ${t('about.contributeDesc')}
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">
-      <a class="btn btn-primary btn-sm" href="https://github.com/qingchencloud/clawpanel/issues/new" target="_blank" rel="noopener">提交 Issue</a>
-      <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/pulls" target="_blank" rel="noopener">提交 PR</a>
-      <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">贡献指南</a>
-      <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/issues" target="_blank" rel="noopener">查看 Issues</a>
+      <a class="btn btn-primary btn-sm" href="https://github.com/qingchencloud/clawpanel/issues/new" target="_blank" rel="noopener">${t('about.submitIssue')}</a>
+      <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/pulls" target="_blank" rel="noopener">${t('about.submitPR')}</a>
+      <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">${t('about.contributeGuide')}</a>
+      <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/issues" target="_blank" rel="noopener">${t('about.viewIssues')}</a>
     </div>
     <div style="margin-top:8px;font-size:var(--font-size-xs);color:var(--text-tertiary)">
-      国内镜像：<a href="https://gitee.com/QtCodeCreators/clawpanel" target="_blank" rel="noopener" style="color:var(--accent)">Gitee</a>（无法访问 GitHub 时可用）
+      ${t('about.domesticMirrorHint')}
     </div>
   `
 }
@@ -608,32 +609,32 @@ function renderCompany(page) {
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:12px">
       <div style="display:flex;align-items:center;gap:12px">
-        <img src="/images/logo-brand.png" alt="晴辰云" style="width:40px;height:40px;border-radius:10px;flex-shrink:0">
+        <img src="/images/logo-brand.png" alt="QingchenCloud" style="width:40px;height:40px;border-radius:10px;flex-shrink:0">
         <div>
-          <div style="font-weight:700;font-size:var(--font-size-md)">武汉晴辰天下网络科技有限公司</div>
+          <div style="font-weight:700;font-size:var(--font-size-md)">${t('about.companyName')}</div>
           <div style="font-size:var(--font-size-sm);color:var(--text-secondary)">QingchenCloud</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;font-size:var(--font-size-sm)">
         <div style="padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-secondary)">
-          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">官方网站</div>
+          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">${t('about.officialWebsite')}</div>
           <a href="https://qingchencloud.com" target="_blank" rel="noopener" style="color:var(--accent)">qingchencloud.com</a>
         </div>
         <div style="padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-secondary)">
-          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">产品官网</div>
+          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">${t('about.productWebsite')}</div>
           <a href="https://claw.qt.cool" target="_blank" rel="noopener" style="color:var(--accent)">claw.qt.cool</a>
         </div>
         <div style="padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-secondary)">
-          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">开源仓库</div>
+          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">${t('about.openSourceRepo')}</div>
           <a href="https://github.com/qingchencloud" target="_blank" rel="noopener" style="color:var(--accent)">github.com/qingchencloud</a>
         </div>
         <div style="padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-secondary)">
-          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">商务合作</div>
-          <span style="color:var(--text-primary)">请通过官网联系我们</span>
+          <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">${t('about.businessCoop')}</div>
+          <span style="color:var(--text-primary)">${t('about.contactViaWebsite')}</span>
         </div>
       </div>
       <div style="font-size:var(--font-size-xs);color:var(--text-tertiary);line-height:1.6">
-        我们是 OpenClaw 汉化版（3000+ Star）和 ClawPanel 的作者团队。日常做 AI Agent 相关的产品和开源工具，也接企业私有化部署、定制开发之类的活儿。有事直接群里找我们就行。
+        ${t('about.companyDesc')}
       </div>
     </div>
   `

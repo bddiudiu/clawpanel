@@ -5,6 +5,7 @@
 import { wsClient } from '../lib/ws-client.js'
 import { toast } from '../components/toast.js'
 import { icon } from '../lib/icons.js'
+import { t } from '../lib/i18n.js'
 
 let _page = null, _unsubReady = null
 
@@ -15,14 +16,14 @@ export async function render() {
 
   page.innerHTML = `
     <div class="page-header">
-      <h1 class="page-title">使用情况</h1>
-      <p class="page-desc">查看 Token 消耗、API 费用和模型使用统计</p>
+      <h1 class="page-title">${t('usage.title')}</h1>
+      <p class="page-desc">${t('usage.desc')}</p>
     </div>
     <div class="usage-toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:var(--space-lg);flex-wrap:wrap">
-      <button class="btn btn-sm ${_days === 1 ? 'btn-primary' : 'btn-secondary'}" data-days="1">今天</button>
-      <button class="btn btn-sm ${_days === 7 ? 'btn-primary' : 'btn-secondary'}" data-days="7">7天</button>
-      <button class="btn btn-sm ${_days === 30 ? 'btn-primary' : 'btn-secondary'}" data-days="30">30天</button>
-      <button class="btn btn-sm btn-secondary" id="btn-usage-refresh">${icon('refresh-cw', 14)} 刷新</button>
+      <button class="btn btn-sm ${_days === 1 ? 'btn-primary' : 'btn-secondary'}" data-days="1">${t('usage.today')}</button>
+      <button class="btn btn-sm ${_days === 7 ? 'btn-primary' : 'btn-secondary'}" data-days="7">${t('usage.days7')}</button>
+      <button class="btn btn-sm ${_days === 30 ? 'btn-primary' : 'btn-secondary'}" data-days="30">${t('usage.days30')}</button>
+      <button class="btn btn-sm btn-secondary" id="btn-usage-refresh">${icon('refresh-cw', 14)} ${t('usage.refresh')}</button>
     </div>
     <div id="usage-content">
       <div class="stat-card loading-placeholder" style="height:120px"></div>
@@ -57,8 +58,8 @@ async function loadUsage(page) {
 
   if (!wsClient.connected) {
     el.innerHTML = `<div class="usage-empty">
-      <div style="color:var(--text-tertiary);margin-bottom:8px">Gateway 连接中...</div>
-      <div class="form-hint">等待 Gateway 连接就绪后自动加载</div>
+      <div style="color:var(--text-tertiary);margin-bottom:8px">${t('usage.gwConnecting')}</div>
+      <div class="form-hint">${t('usage.gwWait')}</div>
     </div>`
     // 自动等待连接就绪后重试
     if (_unsubReady) _unsubReady()
@@ -77,17 +78,17 @@ async function loadUsage(page) {
     renderUsage(el, data)
   } catch (e) {
     el.innerHTML = `<div class="usage-empty">
-      <div style="color:var(--error);margin-bottom:8px">加载失败: ${esc(e?.message || e)}</div>
-      <div class="form-hint">可能需要更新 OpenClaw 到 2026.3.11+ 以支持 Usage API</div>
-      <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="this.closest('.page').querySelector('#btn-usage-refresh').click()">重试</button>
+      <div style="color:var(--error);margin-bottom:8px">${t('usage.loadFailed')}: ${esc(e?.message || e)}</div>
+      <div class="form-hint">${t('usage.loadFailedHint')}</div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="this.closest('.page').querySelector('#btn-usage-refresh').click()">${t('usage.retry')}</button>
     </div>`
   }
 }
 
 function renderUsage(el, data) {
-  if (!data) { el.innerHTML = '<div class="usage-empty">暂无数据</div>'; return }
+  if (!data) { el.innerHTML = `<div class="usage-empty">${t('usage.noData')}</div>`; return }
 
-  const t = data.totals || {}
+  const totals = data.totals || {}
   const a = data.aggregates || {}
   const msgs = a.messages || {}
   const tools = a.tools || {}
@@ -109,32 +110,32 @@ function renderUsage(el, data) {
   const overviewHtml = `
     <div class="stat-cards" style="margin-bottom:var(--space-lg)">
       <div class="stat-card">
-        <div class="stat-card-header"><span class="stat-card-label">消息</span></div>
+        <div class="stat-card-header"><span class="stat-card-label">${t('usage.messages')}</span></div>
         <div class="stat-card-value">${msgs.total || 0}</div>
-        <div class="stat-card-meta">${msgs.user || 0} 用户 · ${msgs.assistant || 0} 助手</div>
+        <div class="stat-card-meta">${msgs.user || 0} ${t('usage.userMsgs')} · ${msgs.assistant || 0} ${t('usage.assistantMsgs')}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-header"><span class="stat-card-label">工具调用</span></div>
+        <div class="stat-card-header"><span class="stat-card-label">${t('usage.toolCalls')}</span></div>
         <div class="stat-card-value">${tools.totalCalls || 0}</div>
-        <div class="stat-card-meta">${tools.uniqueTools || 0} 种工具</div>
+        <div class="stat-card-meta">${t('usage.toolKinds', { count: tools.uniqueTools || 0 })}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-header"><span class="stat-card-label">错误</span></div>
+        <div class="stat-card-header"><span class="stat-card-label">${t('usage.errors')}</span></div>
         <div class="stat-card-value">${msgs.errors || 0}</div>
-        <div class="stat-card-meta">错误率 ${fmtRate(msgs.errors, msgs.total)}</div>
+        <div class="stat-card-meta">${t('usage.errorRate')} ${fmtRate(msgs.errors, msgs.total)}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-header"><span class="stat-card-label">Token 总量</span></div>
-        <div class="stat-card-value">${fmtTokens(t.totalTokens)}</div>
-        <div class="stat-card-meta">${fmtTokens(t.input)} 输入 · ${fmtTokens(t.output)} 输出</div>
+        <div class="stat-card-header"><span class="stat-card-label">${t('usage.totalTokens')}</span></div>
+        <div class="stat-card-value">${fmtTokens(totals.totalTokens)}</div>
+        <div class="stat-card-meta">${fmtTokens(totals.input)} ${t('usage.input')} · ${fmtTokens(totals.output)} ${t('usage.output')}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-header"><span class="stat-card-label">费用</span></div>
-        <div class="stat-card-value">${fmtCost(t.totalCost)}</div>
-        <div class="stat-card-meta">${fmtCost(t.inputCost)} 输入 · ${fmtCost(t.outputCost)} 输出</div>
+        <div class="stat-card-header"><span class="stat-card-label">${t('usage.cost')}</span></div>
+        <div class="stat-card-value">${fmtCost(totals.totalCost)}</div>
+        <div class="stat-card-meta">${fmtCost(totals.inputCost)} ${t('usage.input')} · ${fmtCost(totals.outputCost)} ${t('usage.output')}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-header"><span class="stat-card-label">会话</span></div>
+        <div class="stat-card-header"><span class="stat-card-label">${t('usage.sessions')}</span></div>
         <div class="stat-card-value">${(data.sessions || []).length}</div>
         <div class="stat-card-meta">${data.startDate || ''} ~ ${data.endDate || ''}</div>
       </div>
@@ -142,7 +143,7 @@ function renderUsage(el, data) {
   `
 
   // ── Top 排行 ──
-  const renderTop = (title, items, keyFn, valueFn, metaFn) => {
+  const renderTop = (title, items, keyFn, valueFn) => {
     if (!items || !items.length) return ''
     const rows = items.slice(0, 5).map(item => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-primary)">
@@ -158,15 +159,15 @@ function renderUsage(el, data) {
     `
   }
 
-  const topModels = renderTop('热门模型',
-    a.byModel, m => m.model || '未知', m => fmtCost(m.totals?.totalCost) + ' · ' + fmtTokens(m.totals?.totalTokens))
-  const topProviders = renderTop('热门服务商',
-    a.byProvider, p => p.provider || '未知', p => fmtCost(p.totals?.totalCost) + ' · ' + p.count + ' 次')
-  const topTools = renderTop('热门工具',
-    (tools.tools || []), t => t.name, t => t.count + ' 次调用')
-  const topAgents = renderTop('热门 Agent',
-    a.byAgent, a => a.agentId || 'main', a => fmtCost(a.totals?.totalCost))
-  const topChannels = renderTop('热门渠道',
+  const topModels = renderTop(t('usage.topModels'),
+    a.byModel, m => m.model || t('usage.unknownModel'), m => fmtCost(m.totals?.totalCost) + ' · ' + fmtTokens(m.totals?.totalTokens))
+  const topProviders = renderTop(t('usage.topProviders'),
+    a.byProvider, p => p.provider || t('usage.unknownProvider'), p => fmtCost(p.totals?.totalCost) + ' · ' + t('usage.times', { count: p.count }))
+  const topTools = renderTop(t('usage.topTools'),
+    (tools.tools || []), item => item.name, item => t('usage.timesCall', { count: item.count }))
+  const topAgents = renderTop(t('usage.topAgents'),
+    a.byAgent, item => item.agentId || 'main', item => fmtCost(item.totals?.totalCost))
+  const topChannels = renderTop(t('usage.topChannels'),
     a.byChannel, c => c.channel || 'webchat', c => fmtCost(c.totals?.totalCost))
 
   const topsHtml = `<div class="usage-tops-grid">${topModels}${topProviders}${topTools}${topAgents}${topChannels}</div>`
@@ -174,12 +175,12 @@ function renderUsage(el, data) {
   // ── Token 分类 ──
   const tokenBreakdownHtml = `
     <div class="config-section" style="margin-top:var(--space-lg)">
-      <div class="config-section-title">Token 分类</div>
+      <div class="config-section-title">${t('usage.tokenBreakdown')}</div>
       <div style="display:flex;gap:var(--space-lg);flex-wrap:wrap;padding:var(--space-md)">
-        <div><span style="display:inline-block;width:10px;height:10px;background:var(--error);border-radius:2px;margin-right:6px"></span>输出 ${fmtTokens(t.output)}</div>
-        <div><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:6px"></span>输入 ${fmtTokens(t.input)}</div>
-        <div><span style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:2px;margin-right:6px"></span>缓存读取 ${fmtTokens(t.cacheRead)}</div>
-        <div><span style="display:inline-block;width:10px;height:10px;background:var(--warning);border-radius:2px;margin-right:6px"></span>缓存写入 ${fmtTokens(t.cacheWrite)}</div>
+        <div><span style="display:inline-block;width:10px;height:10px;background:var(--error);border-radius:2px;margin-right:6px"></span>${t('usage.outputTokens')} ${fmtTokens(totals.output)}</div>
+        <div><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:6px"></span>${t('usage.inputTokens')} ${fmtTokens(totals.input)}</div>
+        <div><span style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:2px;margin-right:6px"></span>${t('usage.cacheRead')} ${fmtTokens(totals.cacheRead)}</div>
+        <div><span style="display:inline-block;width:10px;height:10px;background:var(--warning);border-radius:2px;margin-right:6px"></span>${t('usage.cacheWrite')} ${fmtTokens(totals.cacheWrite)}</div>
       </div>
     </div>
   `
@@ -199,7 +200,7 @@ function renderUsage(el, data) {
     }).join('')
     dailyHtml = `
       <div class="config-section" style="margin-top:var(--space-lg)">
-        <div class="config-section-title">每日用量</div>
+        <div class="config-section-title">${t('usage.dailyUsage')}</div>
         <div class="usage-daily-chart">${bars}</div>
       </div>
     `
@@ -226,7 +227,7 @@ function renderUsage(el, data) {
     }).join('')
     sessionsHtml = `
       <div class="config-section" style="margin-top:var(--space-lg)">
-        <div class="config-section-title">会话明细 <span style="font-weight:normal;color:var(--text-tertiary);font-size:var(--font-size-xs)">最近 ${sessions.length} 个</span></div>
+        <div class="config-section-title">${t('usage.sessionDetail')} <span style="font-weight:normal;color:var(--text-tertiary);font-size:var(--font-size-xs)">${t('usage.recentN', { count: sessions.length })}</span></div>
         <div class="session-list">${rows}</div>
       </div>
     `

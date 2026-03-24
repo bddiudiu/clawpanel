@@ -16,9 +16,9 @@ function escapeHtml(str) {
 }
 
 const REGISTRIES = [
-  { label: '淘宝镜像 (推荐)', value: 'https://registry.npmmirror.com' },
-  { label: 'npm 官方源', value: 'https://registry.npmjs.org' },
-  { label: '华为云镜像', value: 'https://repo.huaweicloud.com/repository/npm/' },
+  { label: () => t('settings.registryTaobao'), value: 'https://registry.npmmirror.com' },
+  { label: () => t('settings.registryNpm'), value: 'https://registry.npmjs.org' },
+  { label: () => t('settings.registryHuawei'), value: 'https://repo.huaweicloud.com/repository/npm/' },
 ]
 
 export async function render() {
@@ -27,22 +27,22 @@ export async function render() {
 
   page.innerHTML = `
     <div class="page-header">
-      <h1 class="page-title">面板设置</h1>
-      <p class="page-desc">管理 ClawPanel 的网络、代理和下载源配置</p>
+      <h1 class="page-title">${t('settings.title')}</h1>
+      <p class="page-desc">${t('settings.desc')}</p>
     </div>
 
     <div class="config-section" id="proxy-section">
-      <div class="config-section-title">网络代理</div>
+      <div class="config-section-title">${t('settings.networkProxy')}</div>
       <div id="proxy-bar"><div class="stat-card loading-placeholder" style="height:48px"></div></div>
     </div>
 
     <div class="config-section" id="model-proxy-section">
-      <div class="config-section-title">模型请求代理</div>
+      <div class="config-section-title">${t('settings.modelProxy')}</div>
       <div id="model-proxy-bar"><div class="stat-card loading-placeholder" style="height:48px"></div></div>
     </div>
 
     <div class="config-section" id="registry-section">
-      <div class="config-section-title">npm 源设置</div>
+      <div class="config-section-title">${t('settings.npmRegistry')}</div>
       <div id="registry-bar"><div class="stat-card loading-placeholder" style="height:48px"></div></div>
     </div>
 
@@ -86,17 +86,17 @@ async function loadProxyConfig(page) {
     bar.innerHTML = `
       <div style="display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap">
         <input class="form-input" data-name="proxy-url" placeholder="http://127.0.0.1:7897" value="${escapeHtml(proxyUrl)}" style="max-width:360px">
-        <button class="btn btn-primary btn-sm" data-action="save-proxy">保存</button>
-        <button class="btn btn-secondary btn-sm" data-action="test-proxy" ${proxyUrl ? '' : 'disabled'}>测试连通</button>
-        <button class="btn btn-secondary btn-sm" data-action="clear-proxy" ${proxyUrl ? '' : 'disabled'}>关闭代理</button>
+        <button class="btn btn-primary btn-sm" data-action="save-proxy">${t('common.save')}</button>
+        <button class="btn btn-secondary btn-sm" data-action="test-proxy" ${proxyUrl ? '' : 'disabled'}>${t('settings.testProxy')}</button>
+        <button class="btn btn-secondary btn-sm" data-action="clear-proxy" ${proxyUrl ? '' : 'disabled'}>${t('settings.clearProxy')}</button>
       </div>
       <div id="proxy-test-result" style="margin-top:var(--space-xs);font-size:var(--font-size-xs);min-height:20px"></div>
       <div class="form-hint" style="margin-top:var(--space-xs)">
-        设置后，npm 安装/升级、版本检测、GitHub/Gitee 更新检查、ClawHub Skills 等下载类操作会走此代理。自动绕过 localhost 和内网地址。保存后新请求立即生效；如 Gateway 正在运行，建议重启一次服务。
+        ${t('settings.proxyHint')}
       </div>
     `
   } catch (e) {
-    bar.innerHTML = `<div style="color:var(--error)">加载失败: ${escapeHtml(String(e))}</div>`
+    bar.innerHTML = `<div style="color:var(--error)">${t('common.loadFailed')}: ${escapeHtml(String(e))}</div>`
   }
 }
 
@@ -115,19 +115,19 @@ async function loadModelProxyConfig(page) {
       <div style="display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap">
         <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);cursor:pointer">
           <input type="checkbox" data-name="model-proxy-toggle" ${modelProxy ? 'checked' : ''} ${hasProxy ? '' : 'disabled'}>
-          模型测试和模型列表请求也走代理
+          ${t('settings.modelProxyToggle')}
         </label>
-        <button class="btn btn-primary btn-sm" data-action="save-model-proxy">保存</button>
+        <button class="btn btn-primary btn-sm" data-action="save-model-proxy">${t('common.save')}</button>
       </div>
       <div class="form-hint" style="margin-top:var(--space-xs)">
         ${hasProxy
-          ? '默认关闭。部分用户的模型 API 地址本身就是国内中转或内网地址，走代理反而会连接失败。只有当你的模型服务商需要翻墙访问时才建议开启。'
-          : '请先在上方设置网络代理地址后，才能启用此选项。'
+          ? t('settings.modelProxyHint')
+          : t('settings.modelProxyNoProxy')
         }
       </div>
     `
   } catch (e) {
-    bar.innerHTML = `<div style="color:var(--error)">加载失败: ${escapeHtml(String(e))}</div>`
+    bar.innerHTML = `<div style="color:var(--error)">${t('common.loadFailed')}: ${escapeHtml(String(e))}</div>`
   }
 }
 
@@ -141,13 +141,13 @@ async function loadRegistry(page) {
     bar.innerHTML = `
       <div style="display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap">
         <select class="form-input" data-name="registry" style="max-width:320px">
-          ${REGISTRIES.map(r => `<option value="${r.value}" ${r.value === current ? 'selected' : ''}>${r.label}</option>`).join('')}
-          <option value="custom" ${!isPreset ? 'selected' : ''}>自定义</option>
+          ${REGISTRIES.map(r => `<option value="${r.value}" ${r.value === current ? 'selected' : ''}>${typeof r.label === 'function' ? r.label() : r.label}</option>`).join('')}
+          <option value="custom" ${!isPreset ? 'selected' : ''}>${t('settings.registryCustom')}</option>
         </select>
         <input class="form-input" data-name="custom-registry" placeholder="https://..." value="${isPreset ? '' : escapeHtml(current)}" style="max-width:320px;${isPreset ? 'display:none' : ''}">
-        <button class="btn btn-primary btn-sm" data-action="save-registry">保存</button>
+        <button class="btn btn-primary btn-sm" data-action="save-registry">${t('common.save')}</button>
       </div>
-      <div class="form-hint" style="margin-top:var(--space-xs)">升级和版本检测使用此源下载 npm 包，国内用户推荐淘宝镜像</div>
+      <div class="form-hint" style="margin-top:var(--space-xs)">${t('settings.registryHint')}</div>
     `
     const select = bar.querySelector('[data-name="registry"]')
     const customInput = bar.querySelector('[data-name="custom-registry"]')
@@ -155,7 +155,7 @@ async function loadRegistry(page) {
       customInput.style.display = select.value === 'custom' ? '' : 'none'
     }
   } catch (e) {
-    bar.innerHTML = `<div style="color:var(--error)">加载失败: ${escapeHtml(String(e))}</div>`
+    bar.innerHTML = `<div style="color:var(--error)">${t('common.loadFailed')}: ${escapeHtml(String(e))}</div>`
   }
 }
 
@@ -169,26 +169,26 @@ async function loadOpenclawDir(page) {
     const cfg = await api.readPanelConfig()
     const customValue = cfg?.openclawDir || ''
     const statusText = info.configExists
-      ? '<span style="color:var(--success)">配置文件存在</span>'
-      : '<span style="color:var(--warning)">配置文件不存在</span>'
+      ? `<span style="color:var(--success)">${t('settings.configExists')}</span>`
+      : `<span style="color:var(--warning)">${t('settings.configMissing')}</span>`
     bar.innerHTML = `
       <div style="margin-bottom:var(--space-xs)">
-        <span class="form-hint">当前路径:</span>
+        <span class="form-hint">${t('settings.currentPath')}:</span>
         <strong style="font-size:var(--font-size-sm)">${escapeHtml(info.path)}</strong>
         <span style="margin-left:var(--space-xs);font-size:var(--font-size-xs)">${statusText}</span>
-        ${info.isCustom ? '<span class="clawhub-badge" style="margin-left:var(--space-xs);background:rgba(99,102,241,0.14);color:#6366f1;font-size:var(--font-size-xs)">自定义</span>' : ''}
+        ${info.isCustom ? `<span class="clawhub-badge" style="margin-left:var(--space-xs);background:rgba(99,102,241,0.14);color:#6366f1;font-size:var(--font-size-xs)">${t('settings.customBadge')}</span>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:var(--space-sm);flex-wrap:wrap">
-        <input class="form-input" data-name="openclaw-dir" placeholder="留空使用默认路径 ~/.openclaw" value="${escapeHtml(customValue)}" style="max-width:420px">
-        <button class="btn btn-primary btn-sm" data-action="save-openclaw-dir">保存</button>
-        ${info.isCustom ? '<button class="btn btn-secondary btn-sm" data-action="reset-openclaw-dir">恢复默认</button>' : ''}
+        <input class="form-input" data-name="openclaw-dir" placeholder="${t('settings.dirPlaceholder')}" value="${escapeHtml(customValue)}" style="max-width:420px">
+        <button class="btn btn-primary btn-sm" data-action="save-openclaw-dir">${t('common.save')}</button>
+        ${info.isCustom ? `<button class="btn btn-secondary btn-sm" data-action="reset-openclaw-dir">${t('settings.resetDefault')}</button>` : ''}
       </div>
       <div class="form-hint" style="margin-top:var(--space-xs)">
-        自定义 OpenClaw 配置目录路径。修改后需要重启面板生效。目标目录必须存在且包含 <code>openclaw.json</code>。
+        ${t('settings.dirHint')}
       </div>
     `
   } catch (e) {
-    bar.innerHTML = `<div style="color:var(--error)">加载失败: ${escapeHtml(String(e))}</div>`
+    bar.innerHTML = `<div style="color:var(--error)">${t('common.loadFailed')}: ${escapeHtml(String(e))}</div>`
   }
 }
 
@@ -203,7 +203,7 @@ async function handleSaveOpenclawDir(page) {
   }
   await api.writePanelConfig(cfg)
   await loadOpenclawDir(page)
-  await promptRestart(value ? '自定义路径已保存' : '已恢复默认路径')
+  await promptRestart(value ? t('settings.customPathSaved') : t('settings.defaultRestored'))
 }
 
 async function handleResetOpenclawDir(page) {
@@ -211,17 +211,17 @@ async function handleResetOpenclawDir(page) {
   delete cfg.openclawDir
   await api.writePanelConfig(cfg)
   await loadOpenclawDir(page)
-  await promptRestart('已恢复默认路径')
+  await promptRestart(t('settings.defaultRestored'))
 }
 
 async function promptRestart(msg) {
   if (!isTauri) { toast(msg, 'success'); return }
-  const ok = await showConfirm(`${msg}。\n\n需要重启面板才能生效，是否立即重启？`)
+  const ok = await showConfirm(`${msg}\n\n${t('settings.restartConfirm')}`)
   if (ok) {
-    toast('正在重启...', 'info')
-    try { await api.relaunchApp() } catch { toast('自动重启失败，请手动关闭后重新打开', 'warning') }
+    toast(t('settings.restarting'), 'info')
+    try { await api.relaunchApp() } catch { toast(t('settings.restartFailed'), 'warning') }
   } else {
-    toast(`${msg}，下次启动时生效`, 'success')
+    toast(`${msg}, ${t('settings.effectNextLaunch')}`, 'success')
   }
 }
 
@@ -276,20 +276,20 @@ function normalizeProxyUrl(value) {
   const url = String(value || '').trim()
   if (!url) return ''
   if (!/^https?:\/\//i.test(url)) {
-    throw new Error('代理地址必须以 http:// 或 https:// 开头')
+    throw new Error(t('settings.proxyUrlInvalid'))
   }
   return url
 }
 
 async function handleTestProxy(page) {
   const resultEl = page.querySelector('#proxy-test-result')
-  if (resultEl) resultEl.innerHTML = '<span style="color:var(--text-tertiary)">正在测试代理连通性...</span>'
+  if (resultEl) resultEl.innerHTML = `<span style="color:var(--text-tertiary)">${t('settings.testingProxy')}</span>`
   try {
     const r = await api.testProxy()
     if (resultEl) {
       resultEl.innerHTML = r.ok
-        ? `<span style="color:var(--success)">✓ 代理连通（HTTP ${r.status}，耗时 ${r.elapsed_ms}ms）→ ${escapeHtml(r.target)}</span>`
-        : `<span style="color:var(--warning)">⚠ 代理可达但返回异常（HTTP ${r.status}，${r.elapsed_ms}ms）</span>`
+        ? `<span style="color:var(--success)">✓ ${t('settings.proxyOk', { status: r.status, ms: r.elapsed_ms, target: escapeHtml(r.target) })}</span>`
+        : `<span style="color:var(--warning)">⚠ ${t('settings.proxyWarn', { status: r.status, ms: r.elapsed_ms })}</span>`
     }
   } catch (e) {
     if (resultEl) resultEl.innerHTML = `<span style="color:var(--error)">✗ ${escapeHtml(String(e))}</span>`
@@ -300,7 +300,7 @@ async function handleSaveProxy(page) {
   const input = page.querySelector('[data-name="proxy-url"]')
   const proxyUrl = normalizeProxyUrl(input?.value || '')
   if (!proxyUrl) {
-    toast('请输入代理地址，或点击"关闭代理"', 'error')
+    toast(t('settings.proxyUrlEmpty'), 'error')
     return
   }
   const cfg = await api.readPanelConfig()
@@ -309,7 +309,7 @@ async function handleSaveProxy(page) {
   }
   cfg.networkProxy.url = proxyUrl
   await api.writePanelConfig(cfg)
-  toast('网络代理已保存；如 Gateway 正在运行，建议重启服务', 'success')
+  toast(t('settings.proxySaved'), 'success')
   await loadProxyConfig(page)
   await loadModelProxyConfig(page)
 }
@@ -318,7 +318,7 @@ async function handleClearProxy(page) {
   const cfg = await api.readPanelConfig()
   delete cfg.networkProxy
   await api.writePanelConfig(cfg)
-  toast('网络代理已关闭', 'success')
+  toast(t('settings.proxyCleared'), 'success')
   await loadProxyConfig(page)
   await loadModelProxyConfig(page)
 }
@@ -332,16 +332,16 @@ async function handleSaveModelProxy(page) {
   }
   cfg.networkProxy.proxyModelRequests = checked
   await api.writePanelConfig(cfg)
-  toast(checked ? '模型请求将走代理' : '模型请求已关闭代理', 'success')
+  toast(checked ? t('settings.modelProxyOn') : t('settings.modelProxyOff'), 'success')
 }
 
 async function handleSaveRegistry(page) {
   const select = page.querySelector('[data-name="registry"]')
   const customInput = page.querySelector('[data-name="custom-registry"]')
   const registry = select.value === 'custom' ? customInput.value.trim() : select.value
-  if (!registry) { toast('请输入源地址', 'error'); return }
+  if (!registry) { toast(t('settings.registryEmpty'), 'error'); return }
   await api.setNpmRegistry(registry)
-  toast('npm 源已保存', 'success')
+  toast(t('settings.registrySaved'), 'success')
 }
 
 // ===== CLI 绑定 =====

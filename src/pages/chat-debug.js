@@ -8,6 +8,7 @@ import { isOpenclawReady, isGatewayRunning } from '../lib/app-state.js'
 import { icon, statusIcon } from '../lib/icons.js'
 import { toast } from '../components/toast.js'
 import { navigate } from '../router.js'
+import { t } from '../lib/i18n.js'
 
 export async function render() {
   const page = document.createElement('div')
@@ -15,15 +16,15 @@ export async function render() {
 
   page.innerHTML = `
     <div class="page-header" style="margin-bottom:var(--space-lg)">
-      <h1 class="page-title">系统诊断</h1>
-      <p class="page-desc" style="margin-bottom:1em">全面检测系统状态，快速定位问题</p>
+      <h1 class="page-title">${t('chatDebug.title')}</h1>
+      <p class="page-desc" style="margin-bottom:1em">${t('chatDebug.desc')}</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" id="btn-refresh">刷新状态</button>
-        <button class="btn btn-secondary btn-sm" id="btn-doctor-check">诊断配置</button>
-        <button class="btn btn-warning btn-sm" id="btn-doctor-fix">自动修复</button>
-        <button class="btn btn-secondary btn-sm" id="btn-test-ws">测试 WebSocket</button>
-        <button class="btn btn-secondary btn-sm" id="btn-network-log">网络日志</button>
-        <button class="btn btn-secondary btn-sm" id="btn-fix-pairing">一键修复配对</button>
+        <button class="btn btn-primary btn-sm" id="btn-refresh">${t('chatDebug.btnRefresh')}</button>
+        <button class="btn btn-secondary btn-sm" id="btn-doctor-check">${t('chatDebug.btnDiagConfig')}</button>
+        <button class="btn btn-warning btn-sm" id="btn-doctor-fix">${t('chatDebug.btnAutoFix')}</button>
+        <button class="btn btn-secondary btn-sm" id="btn-test-ws">${t('chatDebug.btnTestWs')}</button>
+        <button class="btn btn-secondary btn-sm" id="btn-network-log">${t('chatDebug.btnNetworkLog')}</button>
+        <button class="btn btn-secondary btn-sm" id="btn-fix-pairing">${t('chatDebug.btnFixPairing')}</button>
       </div>
     </div>
     <div id="debug-content">
@@ -34,31 +35,31 @@ export async function render() {
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:var(--space-md)">
-        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">应用状态</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
-        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">WebSocket 连接</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
-        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">Node.js 环境</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
-        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">版本信息</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
+        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">${t('chatDebug.sectionAppState')}</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
+        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">${t('chatDebug.sectionWs')}</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
+        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">${t('chatDebug.sectionNode')}</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
+        <div class="config-section"><div class="config-section-title" style="margin-bottom:8px">${t('chatDebug.sectionVersion')}</div><div class="loading-placeholder" style="height:48px;border-radius:4px"></div></div>
       </div>
     </div>
     <div id="doctor-output" style="display:none;margin-top:var(--space-md)">
       <div class="config-section">
-        <div class="config-section-title">配置诊断输出</div>
+        <div class="config-section-title">${t('chatDebug.sectionDoctorOutput')}</div>
         <pre style="background:var(--bg-secondary);border-radius:var(--radius);padding:var(--space-sm);font-size:var(--font-size-xs);max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-all"></pre>
       </div>
     </div>
     <div id="ws-test-log" style="display:none;margin-top:16px;background:var(--bg-secondary);border-radius:6px;padding:12px">
       <div style="font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <span>WebSocket 连接测试</span>
-        <button class="btn btn-sm" id="btn-clear-log" style="padding:4px 8px;font-size:11px">清空</button>
+        <span>${t('chatDebug.wsTestTitle')}</span>
+        <button class="btn btn-sm" id="btn-clear-log" style="padding:4px 8px;font-size:11px">${t('chatDebug.btnClear')}</button>
       </div>
       <pre id="ws-log-content" style="font-size:11px;line-height:1.5;max-height:400px;overflow:auto;margin:0;color:var(--text-primary)"></pre>
     </div>
     <div id="network-log" style="display:none;margin-top:16px;background:var(--bg-secondary);border-radius:6px;padding:12px">
       <div style="font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <span>网络请求日志（最近 100 条）</span>
+        <span>${t('chatDebug.networkLogTitle')}</span>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-sm" id="btn-refresh-network" style="padding:4px 8px;font-size:11px">刷新</button>
-          <button class="btn btn-sm" id="btn-clear-network" style="padding:4px 8px;font-size:11px">清空</button>
+          <button class="btn btn-sm" id="btn-refresh-network" style="padding:4px 8px;font-size:11px">${t('common.refresh')}</button>
+          <button class="btn btn-sm" id="btn-clear-network" style="padding:4px 8px;font-size:11px">${t('chatDebug.btnClear')}</button>
         </div>
       </div>
       <div id="network-log-content" style="font-size:11px;line-height:1.5;max-height:400px;overflow:auto"></div>
@@ -139,69 +140,69 @@ function renderDebugInfo(el, info) {
   // 总体状态概览
   const allOk = info.appState.openclawReady && info.appState.gatewayRunning && info.wsClient.gatewayReady
   html += `<div class="config-section" style="background:${allOk ? 'var(--success-bg)' : 'var(--warning-bg)'};border-left:3px solid ${allOk ? 'var(--success)' : 'var(--warning)'}">
-    <div style="font-size:16px;font-weight:600;margin-bottom:8px">${allOk ? `${statusIcon('ok')} 系统正常` : `${statusIcon('warn')} 发现问题`}</div>
-    <div style="color:var(--text-secondary);font-size:13px">${allOk ? '所有核心功能运行正常' : '部分功能异常，请查看下方详情'}</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:8px">${allOk ? `${statusIcon('ok')} ${t('chatDebug.systemOk')}` : `${statusIcon('warn')} ${t('chatDebug.issuesFound')}`}</div>
+    <div style="color:var(--text-secondary);font-size:13px">${allOk ? t('chatDebug.allFunctionsOk') : t('chatDebug.someFunctionsError')}</div>
   </div>`
 
   // 应用状态
   html += `<div class="config-section">
-    <div class="config-section-title">应用状态</div>
+    <div class="config-section-title">${t('chatDebug.sectionAppState')}</div>
     <table class="debug-table">
-      <tr><td>OpenClaw 就绪</td><td>${info.appState.openclawReady ? statusIcon('ok') : statusIcon('err')}</td></tr>
-      <tr><td>Gateway 运行中</td><td>${info.appState.gatewayRunning ? statusIcon('ok') : statusIcon('err')}</td></tr>
+      <tr><td>${t('chatDebug.openclawReady')}</td><td>${info.appState.openclawReady ? statusIcon('ok') : statusIcon('err')}</td></tr>
+      <tr><td>${t('chatDebug.gatewayRunning')}</td><td>${info.appState.gatewayRunning ? statusIcon('ok') : statusIcon('err')}</td></tr>
     </table>
   </div>`
 
   // WebSocket 状态
   html += `<div class="config-section">
-    <div class="config-section-title">WebSocket 连接</div>
+    <div class="config-section-title">${t('chatDebug.sectionWs')}</div>
     <table class="debug-table">
-      <tr><td>连接状态</td><td>${info.wsClient.connected ? `${statusIcon('ok')} 已连接` : `${statusIcon('err')} 未连接`}</td></tr>
-      <tr><td>握手状态</td><td>${info.wsClient.gatewayReady ? `${statusIcon('ok')} 已完成` : `${statusIcon('err')} 未完成`}</td></tr>
-      <tr><td>会话密钥</td><td>${info.wsClient.sessionKey || '(空)'}</td></tr>
+      <tr><td>${t('chatDebug.connStatus')}</td><td>${info.wsClient.connected ? `${statusIcon('ok')} ${t('chatDebug.connected')}` : `${statusIcon('err')} ${t('chatDebug.notConnected')}`}</td></tr>
+      <tr><td>${t('chatDebug.handshakeStatus')}</td><td>${info.wsClient.gatewayReady ? `${statusIcon('ok')} ${t('chatDebug.completed')}` : `${statusIcon('err')} ${t('chatDebug.notCompleted')}`}</td></tr>
+      <tr><td>${t('chatDebug.sessionKey')}</td><td>${info.wsClient.sessionKey || t('chatDebug.empty')}</td></tr>
     </table>
   </div>`
 
   // Node.js 环境
   html += `<div class="config-section">
-    <div class="config-section-title">Node.js 环境</div>`
+    <div class="config-section-title">${t('chatDebug.sectionNode')}</div>`
   if (info.nodeError) {
     html += `<div style="color:var(--error)">${statusIcon('err')} ${escapeHtml(info.nodeError)}</div>`
   } else if (info.node) {
     html += `<table class="debug-table">
-      <tr><td>安装状态</td><td>${info.node.installed ? `${statusIcon('ok')} 已安装` : `${statusIcon('err')} 未安装`}</td></tr>
-      <tr><td>版本</td><td>${info.node.version || '(未知)'}</td></tr>
+      <tr><td>${t('chatDebug.installStatus')}</td><td>${info.node.installed ? `${statusIcon('ok')} ${t('chatDebug.installed')}` : `${statusIcon('err')} ${t('chatDebug.notInstalled')}`}</td></tr>
+      <tr><td>${t('chatDebug.version')}</td><td>${info.node.version || t('chatDebug.unknownLabel')}</td></tr>
     </table>`
   }
   html += `</div>`
 
   // 版本信息
   html += `<div class="config-section">
-    <div class="config-section-title">版本信息</div>`
+    <div class="config-section-title">${t('chatDebug.sectionVersion')}</div>`
   if (info.versionError) {
     html += `<div style="color:var(--error)">${statusIcon('err')} ${escapeHtml(info.versionError)}</div>`
   } else if (info.version) {
     html += `<table class="debug-table">
-      <tr><td>当前版本</td><td>${info.version.current || '(未知)'}</td></tr>
-      <tr><td>推荐稳定版</td><td>${info.version.recommended || '(未检测)'}</td></tr>
-      <tr><td>面板版本</td><td>${info.version.panel_version || '(未知)'}</td></tr>
-      <tr><td>最新上游</td><td>${info.version.latest || '(未检测)'}</td></tr>
-      <tr><td>偏离推荐版</td><td>${info.version.ahead_of_recommended ? `${statusIcon('warn')} 当前版本过高，建议回退` : info.version.is_recommended ? `${statusIcon('ok')} 已对齐` : `${statusIcon('warn')} 需要切换`}</td></tr>
-      <tr><td>最新上游可用</td><td>${info.version.latest_update_available ? `${statusIcon('warn')} 有更新` : `${statusIcon('ok')} 无更新`}</td></tr>
+      <tr><td>${t('chatDebug.currentVersion')}</td><td>${info.version.current || t('chatDebug.unknownLabel')}</td></tr>
+      <tr><td>${t('chatDebug.recommendedVersion')}</td><td>${info.version.recommended || t('chatDebug.notDetected')}</td></tr>
+      <tr><td>${t('chatDebug.panelVersion')}</td><td>${info.version.panel_version || t('chatDebug.unknownLabel')}</td></tr>
+      <tr><td>${t('chatDebug.latestUpstream')}</td><td>${info.version.latest || t('chatDebug.notDetected')}</td></tr>
+      <tr><td>${t('chatDebug.deviationFromRecommended')}</td><td>${info.version.ahead_of_recommended ? `${statusIcon('warn')} ${t('chatDebug.versionTooHigh')}` : info.version.is_recommended ? `${statusIcon('ok')} ${t('chatDebug.versionAligned')}` : `${statusIcon('warn')} ${t('chatDebug.versionNeedSwitch')}`}</td></tr>
+      <tr><td>${t('chatDebug.latestAvailable')}</td><td>${info.version.latest_update_available ? `${statusIcon('warn')} ${t('chatDebug.hasUpdate')}` : `${statusIcon('ok')} ${t('chatDebug.noUpdate')}`}</td></tr>
     </table>`
   }
   html += `</div>`
 
   // 配置文件
   html += `<div class="config-section">
-    <div class="config-section-title">配置文件</div>`
+    <div class="config-section-title">${t('chatDebug.sectionConfig')}</div>`
   if (info.configError) {
     html += `<div style="color:var(--error)">${statusIcon('err')} ${escapeHtml(info.configError)}</div>`
   } else if (info.config) {
     const gw = info.config.gateway || {}
     html += `<table class="debug-table">
-      <tr><td>gateway.port</td><td>${gw.port || '(未设置)'}</td></tr>
-      <tr><td>gateway.auth.token</td><td>${gw.auth?.token ? `${statusIcon('ok')} 已设置${typeof gw.auth.token === 'object' ? ' (SecretRef)' : ''}` : `${statusIcon('warn')} 未设置`}</td></tr>
+      <tr><td>gateway.port</td><td>${gw.port || t('chatDebug.notSet')}</td></tr>
+      <tr><td>gateway.auth.token</td><td>${gw.auth?.token ? `${statusIcon('ok')} ${t('chatDebug.set')}${typeof gw.auth.token === 'object' ? ' (SecretRef)' : ''}` : `${statusIcon('warn')} ${t('chatDebug.notSet')}`}</td></tr>
       <tr><td>gateway.enabled</td><td>${gw.enabled !== false ? statusIcon('ok') : statusIcon('err')}</td></tr>
       <tr><td>gateway.mode</td><td>${gw.mode || 'local'}</td></tr>
     </table>`
@@ -210,35 +211,35 @@ function renderDebugInfo(el, info) {
 
   // 服务状态
   html += `<div class="config-section">
-    <div class="config-section-title">服务状态</div>`
+    <div class="config-section-title">${t('chatDebug.sectionService')}</div>`
   if (info.servicesError) {
     html += `<div style="color:var(--error)">${statusIcon('err')} ${escapeHtml(info.servicesError)}</div>`
   } else if (info.services?.length > 0) {
     const svc = info.services[0]
     html += `<table class="debug-table">
-      <tr><td>CLI 安装</td><td>${svc.cli_installed !== false ? `${statusIcon('ok')} 已安装` : `${statusIcon('err')} 未安装`}</td></tr>
-      <tr><td>运行状态</td><td>${svc.running ? `${statusIcon('ok')} 运行中` : `${statusIcon('err')} 已停止`}</td></tr>
-      <tr><td>进程 PID</td><td>${svc.pid || '(无)'}</td></tr>
-      <tr><td>服务标签</td><td>${svc.label || '(未知)'}</td></tr>
+      <tr><td>${t('chatDebug.cliInstall')}</td><td>${svc.cli_installed !== false ? `${statusIcon('ok')} ${t('chatDebug.installed')}` : `${statusIcon('err')} ${t('chatDebug.notInstalled')}`}</td></tr>
+      <tr><td>${t('chatDebug.runStatus')}</td><td>${svc.running ? `${statusIcon('ok')} ${t('chatDebug.running')}` : `${statusIcon('err')} ${t('chatDebug.stopped')}`}</td></tr>
+      <tr><td>${t('chatDebug.processPid')}</td><td>${svc.pid || t('chatDebug.none')}</td></tr>
+      <tr><td>${t('chatDebug.serviceLabel')}</td><td>${svc.label || t('chatDebug.unknownLabel')}</td></tr>
     </table>`
   }
   html += `</div>`
 
   // 设备密钥
   html += `<div class="config-section">
-    <div class="config-section-title">设备密钥 & 握手签名</div>`
+    <div class="config-section-title">${t('chatDebug.sectionDevice')}</div>`
   if (info.connectFrameError) {
     html += `<div style="color:var(--error)">${statusIcon('err')} ${escapeHtml(info.connectFrameError)}</div>`
   } else if (info.connectFrame) {
     const device = info.connectFrame.params?.device
-    html += `<div style="color:var(--success);margin-bottom:8px">${statusIcon('ok')} 设备密钥生成成功</div>
+    html += `<div style="color:var(--success);margin-bottom:8px">${statusIcon('ok')} ${t('chatDebug.deviceKeySuccess')}</div>
     <table class="debug-table">
-      <tr><td>设备 ID</td><td style="font-size:10px;word-break:break-all">${device?.id || '(无)'}</td></tr>
-      <tr><td>公钥</td><td style="font-size:10px;word-break:break-all">${device?.publicKey ? device.publicKey.substring(0, 32) + '...' : '(无)'}</td></tr>
-      <tr><td>签名时间</td><td>${device?.signedAt || '(无)'}</td></tr>
+      <tr><td>${t('chatDebug.deviceId')}</td><td style="font-size:10px;word-break:break-all">${device?.id || t('chatDebug.none')}</td></tr>
+      <tr><td>${t('chatDebug.publicKey')}</td><td style="font-size:10px;word-break:break-all">${device?.publicKey ? device.publicKey.substring(0, 32) + '...' : t('chatDebug.none')}</td></tr>
+      <tr><td>${t('chatDebug.signTime')}</td><td>${device?.signedAt || t('chatDebug.none')}</td></tr>
     </table>
     <details style="margin-top:8px">
-      <summary style="cursor:pointer;color:var(--text-secondary);font-size:12px">查看完整 Connect Frame</summary>
+      <summary style="cursor:pointer;color:var(--text-secondary);font-size:12px">${t('chatDebug.viewConnectFrame')}</summary>
       <pre style="background:var(--bg-secondary);padding:8px;border-radius:4px;overflow:auto;max-height:300px;font-size:11px">${escapeHtml(JSON.stringify(info.connectFrame, null, 2))}</pre>
     </details>`
   }
@@ -246,41 +247,41 @@ function renderDebugInfo(el, info) {
 
   // 诊断建议
   html += `<div class="config-section">
-    <div class="config-section-title">诊断建议</div>
+    <div class="config-section-title">${t('chatDebug.sectionDiagnosis')}</div>
     <ul style="margin:0;padding-left:20px;color:var(--text-secondary);font-size:13px">`
 
   if (!info.node?.installed) {
-    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} Node.js 未安装，请先安装 Node.js（<a href="https://nodejs.org/" target="_blank" rel="noopener">下载地址</a>）</li>`
+    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} ${t('chatDebug.diagNodeNotInstalled')}</li>`
   }
   if (info.configError) {
-    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} 配置文件不存在或损坏，请前往"初始设置"页面完成配置</li>`
+    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} ${t('chatDebug.diagConfigMissing')}</li>`
   }
   if (info.servicesError || !info.services?.length || info.services[0]?.cli_installed === false) {
-    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} OpenClaw CLI 未安装，请前往"初始设置"页面安装</li>`
+    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} ${t('chatDebug.diagCliNotInstalled')}</li>`
   }
   if (info.services?.length > 0 && !info.services[0]?.running) {
-    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} Gateway 未启动，请前往"服务管理"页面启动服务</li>`
+    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} ${t('chatDebug.diagGatewayNotRunning')}</li>`
   }
   if (info.config && !info.config.gateway?.auth?.token) {
-    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} Gateway token 未设置（本地开发可选，生产环境建议设置）</li>`
+    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} ${t('chatDebug.diagTokenNotSet')}</li>`
   } else if (info.config && typeof info.config.gateway?.auth?.token === 'object') {
-    html += `<li style="margin-bottom:6px">${statusIcon('ok')} Gateway token 通过环境变量/引用配置（SecretRef）</li>`
+    html += `<li style="margin-bottom:6px">${statusIcon('ok')} ${t('chatDebug.diagTokenSecretRef')}</li>`
   }
   if (info.connectFrameError) {
-    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} 设备密钥生成失败，请检查 Rust 后端日志</li>`
+    html += `<li style="color:var(--error);margin-bottom:6px">${statusIcon('err')} ${t('chatDebug.diagDeviceKeyFailed')}</li>`
   }
   if (!info.wsClient.connected && info.services?.length > 0 && info.services[0]?.running) {
-    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} Gateway 运行中但 WebSocket 未连接，常见原因：<strong>origin not allowed</strong>（Tauri origin 未在白名单）或端口 ${info.config?.gateway?.port || 18789} 被占用。点击“一键修复配对”可自动修复 origin 问题</li>`
+    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} ${t('chatDebug.diagWsNotConnected', { port: info.config?.gateway?.port || 18789 })}</li>`
   }
   if (info.wsClient.connected && !info.wsClient.gatewayReady) {
-    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} WebSocket 已连接但握手未完成，请检查 token 是否正确</li>`
+    html += `<li style="color:var(--warning);margin-bottom:6px">${statusIcon('warn')} ${t('chatDebug.diagWsHandshakeFailed')}</li>`
   }
   if (allOk) {
-    html += `<li style="color:var(--success);margin-bottom:6px">${statusIcon('ok')} 所有检测项正常，系统运行良好</li>`
+    html += `<li style="color:var(--success);margin-bottom:6px">${statusIcon('ok')} ${t('chatDebug.diagAllOk')}</li>`
   }
 
   html += `</ul></div>`
-  html += `<div style="margin-top:16px;padding:8px;background:var(--bg-secondary);border-radius:4px;font-size:11px;color:var(--text-tertiary)">检测时间: ${info.timestamp}</div>`
+  html += `<div style="margin-top:16px;padding:8px;background:var(--bg-secondary);border-radius:4px;font-size:11px;color:var(--text-tertiary)">${t('chatDebug.checkTime', { time: info.timestamp })}</div>`
   html += `</div>`
 
   el.innerHTML = html
@@ -300,11 +301,11 @@ async function handleDoctor(page, fix) {
 
   if (btnCheck) btnCheck.disabled = true
   if (btnFix) btnFix.disabled = true
-  if (fix && btnFix) btnFix.textContent = '修复中...'
-  if (!fix && btnCheck) btnCheck.textContent = '诊断中...'
+  if (fix && btnFix) btnFix.textContent = t('chatDebug.fixing')
+  if (!fix && btnCheck) btnCheck.textContent = t('chatDebug.diagnosing')
 
   outputDiv.style.display = 'block'
-  pre.textContent = fix ? '正在运行 openclaw doctor --fix ...' : '正在运行 openclaw doctor ...'
+  pre.textContent = fix ? t('chatDebug.runningDoctorFix') : t('chatDebug.runningDoctor')
   pre.style.color = 'var(--text-secondary)'
 
   try {
@@ -312,27 +313,27 @@ async function handleDoctor(page, fix) {
     let text = result.output || ''
     if (result.errors) text += '\n' + result.errors
     const fullText = text.trim()
-    pre.textContent = fullText || (result.success ? '✓ 未发现问题' : '诊断完成')
+    pre.textContent = fullText || (result.success ? t('chatDebug.noIssues') : t('chatDebug.diagDone'))
     pre.style.color = result.success ? 'var(--success)' : 'var(--warning)'
     if (fullText.includes('ERR_MODULE_NOT_FOUND') || fullText.includes('Cannot find module')) {
-      appendDoctorTip(section, 'OpenClaw 安装可能已损坏', '检测到模块文件缺失，建议前往 <a href="#" data-nav="about" style="color:var(--primary);text-decoration:underline;font-weight:500">关于页面</a> 切换版本或重新安装 OpenClaw CLI。')
-      toast('OpenClaw 安装损坏，建议前往「关于」页重新安装', 'warning')
+      appendDoctorTip(section, t('chatDebug.installCorrupt'), t('chatDebug.installCorruptHint'))
+      toast(t('chatDebug.installCorruptToast'), 'warning')
     } else if (fix && result.success) {
-      toast('配置修复完成', 'success')
+      toast(t('chatDebug.configFixDone'), 'success')
     } else if (fix) {
-      toast('修复完成，部分问题可能需手动处理', 'warning')
+      toast(t('chatDebug.configFixPartial'), 'warning')
     }
   } catch (e) {
     const errMsg = e?.message || String(e)
-    pre.textContent = '执行失败: ' + errMsg
+    pre.textContent = t('chatDebug.execFailed') + errMsg
     pre.style.color = 'var(--error)'
     if (errMsg.includes('ERR_MODULE_NOT_FOUND') || errMsg.includes('Cannot find module') || errMsg.includes('未找到')) {
-      appendDoctorTip(section, 'OpenClaw CLI 不可用', '请前往 <a href="#" data-nav="about" style="color:var(--primary);text-decoration:underline;font-weight:500">关于页面</a> 安装或重新安装 OpenClaw。')
+      appendDoctorTip(section, t('chatDebug.cliUnavailable'), t('chatDebug.cliUnavailableHint'))
     }
-    toast('执行失败: ' + e, 'error')
+    toast(t('chatDebug.execFailed') + e, 'error')
   } finally {
-    if (btnCheck) { btnCheck.disabled = false; btnCheck.textContent = '诊断配置' }
-    if (btnFix) { btnFix.disabled = false; btnFix.textContent = '自动修复' }
+    if (btnCheck) { btnCheck.disabled = false; btnCheck.textContent = t('chatDebug.btnDiagConfig') }
+    if (btnFix) { btnFix.disabled = false; btnFix.textContent = t('chatDebug.btnAutoFix') }
   }
 }
 
@@ -375,7 +376,7 @@ function testWebSocket(page) {
     contentEl.innerHTML = ''
   }
 
-  addLog(`${icon('search', 14)} 开始 WebSocket 连接测试...`)
+  addLog(`${icon('search', 14)} ${t('chatDebug.wsTestStart')}`)
 
   // 关闭旧连接
   if (testWs) {
@@ -391,79 +392,79 @@ function testWebSocket(page) {
     const wsHost = window.__TAURI_INTERNALS__ ? `127.0.0.1:${port}` : location.host
     const url = `ws://${wsHost}/ws?token=${encodeURIComponent(token)}`
 
-    addLog(`${icon('radio', 14)} 连接地址: ${url}`)
-    addLog(`${icon('key', 14)} Token: ${token ? token.substring(0, 20) + '...' : '(空)'}`)
-    addLog(`${icon('clock', 14)} 正在连接...`)
+    addLog(`${icon('radio', 14)} ${t('chatDebug.wsAddress', { url })}`)
+    addLog(`${icon('key', 14)} ${t('chatDebug.wsToken', { token: token ? token.substring(0, 20) + '...' : t('chatDebug.empty') })}`)
+    addLog(`${icon('clock', 14)} ${t('chatDebug.wsConnecting')}`)
 
     try {
       testWs = new WebSocket(url)
 
       testWs.onopen = () => {
-        addLog(`${statusIcon('ok', 14)} WebSocket 连接成功`)
-        addLog(`${icon('clock', 14)} 等待 Gateway 发送 connect.challenge...`)
+        addLog(`${statusIcon('ok', 14)} ${t('chatDebug.wsConnected')}`)
+        addLog(`${icon('clock', 14)} ${t('chatDebug.wsWaitChallenge')}`)
       }
 
       testWs.onmessage = (evt) => {
         try {
           const msg = JSON.parse(evt.data)
-          addLog(`${icon('inbox', 14)} 收到消息: ${escapeHtml(JSON.stringify(msg, null, 2))}`)
+          addLog(`${icon('inbox', 14)} ${t('chatDebug.wsReceivedMsg')}: ${escapeHtml(JSON.stringify(msg, null, 2))}`)
 
           // 如果收到 challenge，尝试发送 connect frame
           if (msg.type === 'event' && msg.event === 'connect.challenge') {
             const nonce = msg.payload?.nonce || ''
-            addLog(`${icon('lock', 14)} 收到 challenge, nonce: ${nonce}`)
-            addLog(`${icon('clock', 14)} 生成 connect frame...`)
+            addLog(`${icon('lock', 14)} ${t('chatDebug.wsReceivedChallenge')}: ${nonce}`)
+            addLog(`${icon('clock', 14)} ${t('chatDebug.wsGeneratingFrame')}`)
 
             api.createConnectFrame(nonce, token).then(frame => {
-              addLog(`${statusIcon('ok', 14)} Connect frame 生成成功`)
-              addLog(`${icon('send', 14)} 发送 connect frame: ${escapeHtml(JSON.stringify(frame, null, 2))}`)
+              addLog(`${statusIcon('ok', 14)} ${t('chatDebug.wsFrameGenerated')}`)
+              addLog(`${icon('send', 14)} ${t('chatDebug.wsSendingFrame')}: ${escapeHtml(JSON.stringify(frame, null, 2))}`)
               testWs.send(JSON.stringify(frame))
             }).catch(e => {
-              addLog(`${statusIcon('err', 14)} 生成 connect frame 失败: ${e}`)
+              addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsFrameFailed')}: ${e}`)
             })
           }
 
           // 如果收到 connect 响应
           if (msg.type === 'res' && msg.id?.startsWith('connect-')) {
             if (msg.ok) {
-              addLog(`${statusIcon('ok', 14)} 握手成功！`)
+              addLog(`${statusIcon('ok', 14)} ${t('chatDebug.wsHandshakeOk')}`)
               addLog(`${icon('bar-chart', 14)} Snapshot: ${escapeHtml(JSON.stringify(msg.payload, null, 2))}`)
               const sessionKey = msg.payload?.snapshot?.sessionDefaults?.mainSessionKey
               if (sessionKey) {
                 addLog(`${icon('key', 14)} Session Key: ${sessionKey}`)
               }
             } else {
-              addLog(`${statusIcon('err', 14)} 握手失败: ${msg.error?.message || msg.error?.code || '未知错误'}`)
+              addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsHandshakeFailed')}: ${msg.error?.message || msg.error?.code || t('common.unknown')}`)
             }
           }
         } catch (e) {
-          addLog(`${statusIcon('warn', 14)} 解析消息失败: ${e}`)
-          addLog(`${icon('inbox', 14)} 原始数据: ${escapeHtml(evt.data)}`)
+          addLog(`${statusIcon('warn', 14)} ${t('chatDebug.wsParseFailed')}: ${e}`)
+          addLog(`${icon('inbox', 14)} ${t('chatDebug.wsRawData')}: ${escapeHtml(evt.data)}`)
         }
       }
 
       testWs.onerror = (e) => {
-        addLog(`${statusIcon('err', 14)} WebSocket 错误: ${e.type}`)
+        addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsError')}: ${e.type}`)
       }
 
       testWs.onclose = (e) => {
-        addLog(`${icon('plug', 14)} 连接关闭 - Code: ${e.code}, Reason: ${e.reason || '(空)'}`)
+        addLog(`${icon('plug', 14)} ${t('chatDebug.wsClosed')} - Code: ${e.code}, Reason: ${e.reason || t('chatDebug.empty')}`)
         if (e.code === 1008) {
-          addLog(`${statusIcon('err', 14)} origin not allowed (1008) - Gateway 拒绝了当前应用的 origin`)
-          addLog(`${icon('lightbulb', 14)} 解决方法：点击“一键修复配对”，将自动将 tauri://localhost 加入白名单并重启 Gateway`)
+          addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsOriginRejected')}`)
+          addLog(`${icon('lightbulb', 14)} ${t('chatDebug.wsOriginFix')}`)
         } else if (e.code === 4001) {
-          addLog(`${statusIcon('err', 14)} 认证失败 (4001) - Token 可能不正确`)
+          addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsAuthFailed')}`)
         } else if (e.code === 1006) {
-          addLog(`${statusIcon('warn', 14)} 异常关闭 (1006) - 可能是网络问题或 Gateway 主动断开`)
+          addLog(`${statusIcon('warn', 14)} ${t('chatDebug.wsAbnormalClose')}`)
         }
         testWs = null
       }
 
     } catch (e) {
-      addLog(`${statusIcon('err', 14)} 创建 WebSocket 失败: ${e}`)
+      addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsCreateFailed')}: ${e}`)
     }
   }).catch(e => {
-    addLog(`${statusIcon('err', 14)} 读取配置失败: ${e}`)
+    addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsConfigReadFailed')}: ${e}`)
   })
 
   function addLog(msg) {
@@ -502,7 +503,7 @@ function renderNetworkLog(contentEl) {
   const logs = getRequestLogs()
 
   if (logs.length === 0) {
-    contentEl.innerHTML = '<div style="color:var(--text-secondary);padding:8px">暂无请求记录</div>'
+    contentEl.innerHTML = `<div style="color:var(--text-secondary);padding:8px">${t('chatDebug.noRequests')}</div>`
     return
   }
 
@@ -517,19 +518,19 @@ function renderNetworkLog(contentEl) {
   let html = `
     <div style="padding:8px;background:var(--bg-primary);border-radius:4px;margin-bottom:8px;font-size:12px">
       <div style="display:flex;gap:16px">
-        <span>总请求: <strong>${total}</strong></span>
-        <span>缓存命中: <strong>${cached}</strong></span>
-        <span>平均耗时: <strong>${avgDuration.toFixed(0)}ms</strong></span>
+        <span>${t('chatDebug.totalRequests')}: <strong>${total}</strong></span>
+        <span>${t('chatDebug.cacheHit')}: <strong>${cached}</strong></span>
+        <span>${t('chatDebug.avgDuration')}: <strong>${avgDuration.toFixed(0)}ms</strong></span>
       </div>
     </div>
     <table class="debug-table" style="width:100%;font-size:11px">
       <thead>
         <tr style="background:var(--bg-primary)">
-          <th style="padding:6px;text-align:left;width:80px">时间</th>
-          <th style="padding:6px;text-align:left">命令</th>
-          <th style="padding:6px;text-align:left;max-width:200px">参数</th>
-          <th style="padding:6px;text-align:right;width:80px">耗时</th>
-          <th style="padding:6px;text-align:center;width:60px">缓存</th>
+          <th style="padding:6px;text-align:left;width:80px">${t('chatDebug.colTime')}</th>
+          <th style="padding:6px;text-align:left">${t('chatDebug.colCommand')}</th>
+          <th style="padding:6px;text-align:left;max-width:200px">${t('chatDebug.colArgs')}</th>
+          <th style="padding:6px;text-align:right;width:80px">${t('chatDebug.colDuration')}</th>
+          <th style="padding:6px;text-align:center;width:60px">${t('chatDebug.colCache')}</th>
         </tr>
       </thead>
       <tbody>
@@ -564,7 +565,7 @@ async function fixPairing(page) {
   const contentEl = page.querySelector('#ws-log-content')
   const fixBtn = page.querySelector('#btn-fix-pairing')
 
-  if (fixBtn) { fixBtn.disabled = true; fixBtn.textContent = '修复中...' }
+  if (fixBtn) { fixBtn.disabled = true; fixBtn.textContent = t('chatDebug.fixing') }
   logEl.style.display = 'block'
   testLogs = []
   logEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -578,42 +579,42 @@ async function fixPairing(page) {
   }
 
   try {
-    addLog(`${icon('wrench', 14)} 开始修复配对问题...`)
+    addLog(`${icon('wrench', 14)} ${t('chatDebug.fixStarting')}`)
 
     // 1. 写入 paired.json + controlUi.allowedOrigins
-    addLog(`${icon('edit', 14)} 正在写入设备配对信息 + Gateway origin 白名单...`)
+    addLog(`${icon('edit', 14)} ${t('chatDebug.fixWritingPair')}`)
     const result = await api.autoPairDevice()
     addLog(`${statusIcon('ok', 14)} ${result}`)
-    addLog(`${statusIcon('ok', 14)} 已将 tauri://localhost 加入 gateway.controlUi.allowedOrigins`)
+    addLog(`${statusIcon('ok', 14)} ${t('chatDebug.fixOriginAdded')}`)
 
     // 2. 停止 Gateway（确保旧进程完全退出，新进程能重新读取配置）
-    addLog(`${icon('zap', 14)} 停止 Gateway 服务...`)
+    addLog(`${icon('zap', 14)} ${t('chatDebug.fixStoppingGw')}`)
     try { await api.stopService('ai.openclaw.gateway') } catch {}
-    addLog(`${icon('clock', 14)} 等待进程退出（3秒）...`)
+    addLog(`${icon('clock', 14)} ${t('chatDebug.fixWaitExit')}`)
     await new Promise(resolve => setTimeout(resolve, 3000))
 
     // 3. 启动 Gateway（重新加载 openclaw.json 配置）
-    addLog(`${icon('zap', 14)} 启动 Gateway 服务...`)
+    addLog(`${icon('zap', 14)} ${t('chatDebug.fixStartingGw')}`)
     await api.startService('ai.openclaw.gateway')
-    addLog(`${statusIcon('ok', 14)} Gateway 启动命令已发送`)
+    addLog(`${statusIcon('ok', 14)} ${t('chatDebug.fixGwStartSent')}`)
 
     // 4. 等待 Gateway 就绪
-    addLog(`${icon('clock', 14)} 等待 Gateway 就绪（5秒）...`)
+    addLog(`${icon('clock', 14)} ${t('chatDebug.fixWaitReady')}`)
     await new Promise(resolve => setTimeout(resolve, 5000))
 
     // 5. 检查 Gateway 状态
-    addLog(`${icon('search', 14)} 检查 Gateway 状态...`)
+    addLog(`${icon('search', 14)} ${t('chatDebug.fixCheckStatus')}`)
     const services = await api.getServicesStatus()
     const running = services?.[0]?.running
 
     if (running) {
-      addLog(`${statusIcon('ok', 14)} Gateway 已启动`)
+      addLog(`${statusIcon('ok', 14)} ${t('chatDebug.fixGwStarted')}`)
     } else {
-      addLog(`${statusIcon('warn', 14)} Gateway 可能还在启动中，请稍后手动测试`)
+      addLog(`${statusIcon('warn', 14)} ${t('chatDebug.fixGwMaybeStarting')}`)
     }
 
     // 6. 测试 WebSocket 连接
-    addLog(`${icon('plug', 14)} 测试 WebSocket 连接...`)
+    addLog(`${icon('plug', 14)} ${t('chatDebug.fixTestingWs')}`)
     const config = await api.readOpenclawConfig()
     const port = config?.gateway?.port || 18789
     const rawToken = config?.gateway?.auth?.token
@@ -624,63 +625,62 @@ async function fixPairing(page) {
     const ws = new WebSocket(url)
 
     ws.onopen = () => {
-      addLog(`${statusIcon('ok', 14)} WebSocket 连接成功`)
+      addLog(`${statusIcon('ok', 14)} ${t('chatDebug.wsConnected')}`)
     }
 
     ws.onmessage = (evt) => {
       try {
         const msg = JSON.parse(evt.data)
         if (msg.type === 'event' && msg.event === 'connect.challenge') {
-          addLog(`${statusIcon('ok', 14)} 收到 connect.challenge`)
+          addLog(`${statusIcon('ok', 14)} ${t('chatDebug.fixReceivedChallenge')}`)
           const nonce = msg.payload?.nonce || ''
 
           api.createConnectFrame(nonce, token).then(frame => {
             ws.send(JSON.stringify(frame))
-            addLog(`${icon('send', 14)} 已发送 connect frame`)
+            addLog(`${icon('send', 14)} ${t('chatDebug.fixFrameSent')}`)
           })
         }
 
         if (msg.type === 'res' && msg.id?.startsWith('connect-')) {
           if (msg.ok) {
-            addLog(`${statusIcon('ok', 14)} 握手成功！配对问题已修复！`)
-            addLog(`${icon('lightbulb', 14)} 正在重新建立主应用 WebSocket 连接...`)
+            addLog(`${statusIcon('ok', 14)} ${t('chatDebug.fixPairSuccess')}`)
+            addLog(`${icon('lightbulb', 14)} ${t('chatDebug.fixReconnecting')}`)
             ws.close(1000)
             // 触发主应用的 wsClient 重连，让主界面正常工作
             wsClient.reconnect()
             setTimeout(() => loadDebugInfo(page), 2000)
           } else {
-            const errMsg = msg.error?.message || msg.error?.code || '未知错误'
-            addLog(`${statusIcon('err', 14)} 握手失败: ${errMsg}`)
+            const errMsg = msg.error?.message || msg.error?.code || t('common.unknown')
+            addLog(`${statusIcon('err', 14)} ${t('chatDebug.wsHandshakeFailed')}: ${errMsg}`)
             if (errMsg.includes('origin not allowed')) {
-              addLog(`${icon('lightbulb', 14)} 原因：Gateway 拒绝了当前应用的 origin，需要重启 Gateway 再试`)
+              addLog(`${icon('lightbulb', 14)} ${t('chatDebug.fixOriginStillRejected')}`)
             } else {
-              addLog(`${icon('lightbulb', 14)} 建议：请手动前往“服务管理”页面重启 Gateway`)
+              addLog(`${icon('lightbulb', 14)} ${t('chatDebug.fixSuggestManualRestart')}`)
             }
           }
         }
       } catch (e) {
-        addLog(`${statusIcon('warn', 14)} 解析消息失败: ${e}`)
+        addLog(`${statusIcon('warn', 14)} ${t('chatDebug.wsParseFailed')}: ${e}`)
       }
     }
 
     ws.onerror = () => {
-      addLog(`${statusIcon('err', 14)} WebSocket 连接失败，请确认 Gateway 已在运行`)
+      addLog(`${statusIcon('err', 14)} ${t('chatDebug.fixWsConnFailed')}`)
     }
 
     ws.onclose = (e) => {
       if (e.code === 1008) {
-        addLog(`${statusIcon('warn', 14)} 连接被拒绝 (1008) - Gateway 拒绝了当前 origin`)
-        addLog(`${icon('lightbulb', 14)} 该问题应已被本次修复流程处理，请再次点击“一键修复配对”`)
+        addLog(`${statusIcon('warn', 14)} ${t('chatDebug.fixOriginRejected1008')}`)
+        addLog(`${icon('lightbulb', 14)} ${t('chatDebug.fixRetryHint')}`)
       } else if (e.code !== 1000) {
-        addLog(`${statusIcon('warn', 14)} 连接关闭 - Code: ${e.code}`)
+        addLog(`${statusIcon('warn', 14)} ${t('chatDebug.wsClosed')} - Code: ${e.code}`)
       }
     }
 
   } catch (e) {
-    addLog(`${statusIcon('err', 14)} 修复失败: ${e}`)
-    addLog(`${icon('lightbulb', 14)} 建议：请手动前往"服务管理"页面重启 Gateway`)
+    addLog(`${statusIcon('err', 14)} ${t('chatDebug.fixFailed')}: ${e}`)
+    addLog(`${icon('lightbulb', 14)} ${t('chatDebug.fixSuggestManualRestart')}`)
   } finally {
-    if (fixBtn) { fixBtn.disabled = false; fixBtn.textContent = '一键修复配对' }
+    if (fixBtn) { fixBtn.disabled = false; fixBtn.textContent = t('chatDebug.btnFixPairing') }
   }
 }
-

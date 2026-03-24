@@ -10,6 +10,7 @@ import { saveMessage, saveMessages, getLocalMessages, isStorageAvailable } from 
 import { toast } from '../components/toast.js'
 import { showModal, showConfirm } from '../components/modal.js'
 import { icon as svgIcon } from '../lib/icons.js'
+import { t } from '../lib/i18n.js'
 
 const RENDER_THROTTLE = 30
 const STORAGE_SESSION_KEY = 'clawpanel-last-session'
@@ -18,40 +19,40 @@ const STORAGE_SIDEBAR_KEY = 'clawpanel-chat-sidebar-open'
 const STORAGE_SESSION_NAMES_KEY = 'clawpanel-chat-session-names'
 
 const COMMANDS = [
-  { title: '会话', commands: [
-    { cmd: '/new', desc: '新建会话', action: 'exec' },
-    { cmd: '/reset', desc: '重置当前会话', action: 'exec' },
-    { cmd: '/stop', desc: '停止生成', action: 'exec' },
+  { title: 'chat.cmdSession', commands: [
+    { cmd: '/new', desc: 'chat.cmdNewSession', action: 'exec' },
+    { cmd: '/reset', desc: 'chat.cmdResetSession', action: 'exec' },
+    { cmd: '/stop', desc: 'chat.cmdStopGen', action: 'exec' },
   ]},
-  { title: '模型', commands: [
-    { cmd: '/model ', desc: '切换模型（输入模型名）', action: 'fill' },
-    { cmd: '/model list', desc: '查看可用模型', action: 'exec' },
-    { cmd: '/model status', desc: '当前模型状态', action: 'exec' },
+  { title: 'chat.cmdModel', commands: [
+    { cmd: '/model ', desc: 'chat.cmdSwitchModel', action: 'fill' },
+    { cmd: '/model list', desc: 'chat.cmdListModels', action: 'exec' },
+    { cmd: '/model status', desc: 'chat.cmdModelStatus', action: 'exec' },
   ]},
-  { title: '思考模式', commands: [
-    { cmd: '/think off', desc: '关闭深度思考', action: 'exec' },
-    { cmd: '/think low', desc: '轻度思考', action: 'exec' },
-    { cmd: '/think medium', desc: '中度思考', action: 'exec' },
-    { cmd: '/think high', desc: '深度思考', action: 'exec' },
+  { title: 'chat.cmdThinkMode', commands: [
+    { cmd: '/think off', desc: 'chat.cmdThinkOff', action: 'exec' },
+    { cmd: '/think low', desc: 'chat.cmdThinkLow', action: 'exec' },
+    { cmd: '/think medium', desc: 'chat.cmdThinkMedium', action: 'exec' },
+    { cmd: '/think high', desc: 'chat.cmdThinkHigh', action: 'exec' },
   ]},
-  { title: '快速模式', commands: [
-    { cmd: '/fast', desc: '切换快速模式（开/关）', action: 'exec' },
-    { cmd: '/fast on', desc: '开启快速模式（低延迟）', action: 'exec' },
-    { cmd: '/fast off', desc: '关闭快速模式', action: 'exec' },
+  { title: 'chat.cmdFastMode', commands: [
+    { cmd: '/fast', desc: 'chat.cmdFastToggle', action: 'exec' },
+    { cmd: '/fast on', desc: 'chat.cmdFastOn', action: 'exec' },
+    { cmd: '/fast off', desc: 'chat.cmdFastOff', action: 'exec' },
   ]},
-  { title: '详细/推理', commands: [
-    { cmd: '/verbose off', desc: '关闭详细模式', action: 'exec' },
-    { cmd: '/verbose low', desc: '低详细度', action: 'exec' },
-    { cmd: '/verbose high', desc: '高详细度', action: 'exec' },
-    { cmd: '/reasoning off', desc: '关闭推理模式', action: 'exec' },
-    { cmd: '/reasoning low', desc: '轻度推理', action: 'exec' },
-    { cmd: '/reasoning medium', desc: '中度推理', action: 'exec' },
-    { cmd: '/reasoning high', desc: '深度推理', action: 'exec' },
+  { title: 'chat.cmdVerbose', commands: [
+    { cmd: '/verbose off', desc: 'chat.cmdVerboseOff', action: 'exec' },
+    { cmd: '/verbose low', desc: 'chat.cmdVerboseLow', action: 'exec' },
+    { cmd: '/verbose high', desc: 'chat.cmdVerboseHigh', action: 'exec' },
+    { cmd: '/reasoning off', desc: 'chat.cmdReasoningOff', action: 'exec' },
+    { cmd: '/reasoning low', desc: 'chat.cmdReasoningLow', action: 'exec' },
+    { cmd: '/reasoning medium', desc: 'chat.cmdReasoningMedium', action: 'exec' },
+    { cmd: '/reasoning high', desc: 'chat.cmdReasoningHigh', action: 'exec' },
   ]},
-  { title: '信息', commands: [
-    { cmd: '/help', desc: '帮助信息', action: 'exec' },
-    { cmd: '/status', desc: '系统状态', action: 'exec' },
-    { cmd: '/context', desc: '上下文信息', action: 'exec' },
+  { title: 'chat.cmdInfo', commands: [
+    { cmd: '/help', desc: 'chat.cmdHelp', action: 'exec' },
+    { cmd: '/status', desc: 'chat.cmdStatus', action: 'exec' },
+    { cmd: '/context', desc: 'chat.cmdContext', action: 'exec' },
   ]},
 ]
 
@@ -115,12 +116,12 @@ export async function render() {
   page.innerHTML = `
     <div class="chat-sidebar" id="chat-sidebar">
       <div class="chat-sidebar-header">
-        <span>会话列表</span>
+        <span>${t('chat.sessionList')}</span>
         <div class="chat-sidebar-header-actions">
-          <button class="chat-sidebar-btn" id="btn-toggle-sidebar" title="会话列表">
+          <button class="chat-sidebar-btn" id="btn-toggle-sidebar" title="${t('chat.sessionList')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <button class="chat-sidebar-btn" id="btn-new-session" title="新建会话">
+          <button class="chat-sidebar-btn" id="btn-new-session" title="${t('chat.newSession')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
         </div>
@@ -130,25 +131,25 @@ export async function render() {
     <div class="chat-main">
       <div class="chat-header">
         <div class="chat-status">
-          <button class="chat-toggle-sidebar" id="btn-toggle-sidebar-main" title="会话列表">
+          <button class="chat-toggle-sidebar" id="btn-toggle-sidebar-main" title="${t('chat.sessionList')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <span class="status-dot" id="chat-status-dot"></span>
-          <span class="chat-title" id="chat-title">聊天</span>
+          <span class="chat-title" id="chat-title">${t('chat.chatTitle')}</span>
         </div>
         <div class="chat-header-actions">
           <div class="chat-model-group">
-            <select class="form-input" id="chat-model-select" title="切换当前会话模型" style="width:200px;max-width:28vw;padding:6px 10px;font-size:var(--font-size-xs)">
-              <option value="">加载模型中...</option>
+            <select class="form-input" id="chat-model-select" style="width:200px;max-width:28vw;padding:6px 10px;font-size:var(--font-size-xs)">
+              <option value="">${t('chat.loadingModels')}</option>
             </select>
-            <button class="btn btn-sm btn-ghost" id="btn-refresh-models" title="刷新模型列表">
+            <button class="btn btn-sm btn-ghost" id="btn-refresh-models" title="${t('chat.refreshModels')}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
             </button>
           </div>
-          <button class="btn btn-sm btn-ghost" id="btn-cmd" title="快捷指令">
+          <button class="btn btn-sm btn-ghost" id="btn-cmd" title="${t('chat.shortcuts')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 3a3 3 0 00-3 3v12a3 3 0 003 3 3 3 0 003-3 3 3 0 00-3-3H6a3 3 0 00-3 3 3 3 0 003 3 3 3 0 003-3V6a3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3h12a3 3 0 003-3 3 3 0 00-3-3z"/></svg>
           </button>
-          <button class="btn btn-sm btn-ghost" id="btn-reset-session" title="重置会话">
+          <button class="btn btn-sm btn-ghost" id="btn-reset-session" title="${t('chat.resetSession')}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
           </button>
         </div>
@@ -164,47 +165,47 @@ export async function render() {
       <div class="chat-attachments-preview" id="chat-attachments-preview" style="display:none"></div>
       <div class="chat-input-area">
         <input type="file" id="chat-file-input" accept="image/*" multiple style="display:none">
-        <button class="chat-attach-btn" id="chat-attach-btn" title="上传图片">
+        <button class="chat-attach-btn" id="chat-attach-btn" title="${t('chat.uploadImage')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
         <div class="chat-input-wrapper">
-          <textarea id="chat-input" rows="1" placeholder="输入消息，Enter 发送，/ 打开指令"></textarea>
+          <textarea id="chat-input" rows="1" placeholder="${t('chat.inputPlaceholder')}"></textarea>
         </div>
         <button class="chat-send-btn" id="chat-send-btn" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
-        <button class="chat-hosted-btn btn btn-sm btn-ghost" id="chat-hosted-btn" title="托管 Agent">
+        <button class="chat-hosted-btn btn btn-sm btn-ghost" id="chat-hosted-btn" title="${t('chat.hostedAgent')}">
           <span class="chat-hosted-label">⊕</span>
-          <span class="chat-hosted-badge idle" id="chat-hosted-badge">托管</span>
+          <span class="chat-hosted-badge idle" id="chat-hosted-badge">${t('chat.hostedBadge')}</span>
         </button>
       </div>
       <div class="hosted-agent-panel" id="hosted-agent-panel" style="display:none">
         <div class="hosted-agent-header">
-          <strong>托管 Agent</strong>
-          <button class="hosted-agent-close" id="hosted-agent-close" title="关闭">&times;</button>
+          <strong>${t('chat.hostedAgent')}</strong>
+          <button class="hosted-agent-close" id="hosted-agent-close" title="${t('common.close')}">&times;</button>
         </div>
         <div class="hosted-agent-body">
           <div class="form-group">
-            <label class="form-label" style="color:var(--accent);font-weight:600">任务目标</label>
-            <textarea class="form-input hosted-agent-prompt" id="hosted-agent-prompt" rows="3" placeholder="例如：持续优化此仓库代码质量，直到没有可改进的地方"></textarea>
-            <div class="form-hint">托管 Agent 会持续引导 OpenClaw 完成此目标。模型使用 <a href="#/assistant" class="hosted-agent-link">AI 助手</a> 的配置。</div>
+            <label class="form-label" style="color:var(--accent);font-weight:600">${t('chat.taskGoal')}</label>
+            <textarea class="form-input hosted-agent-prompt" id="hosted-agent-prompt" rows="3" placeholder="${t('chat.taskGoalPlaceholder')}"></textarea>
+            <div class="form-hint">${t('chat.hostedHint')}</div>
           </div>
           <div class="ha-slider-group">
-            <div class="ha-slider-label">最大回复次数 <span class="ha-slider-val" id="ha-steps-val">50</span></div>
+            <div class="ha-slider-label">${t('chat.maxReplies')} <span class="ha-slider-val" id="ha-steps-val">50</span></div>
             <input type="range" class="ha-slider" id="hosted-agent-max-steps" min="5" max="205" step="5" value="50">
             <div class="ha-slider-ticks"><span>5</span><span>50</span><span>100</span><span>200</span><span>∞</span></div>
           </div>
           <div class="ha-timer-group">
             <div class="ha-timer-header">
-              <span>定时自动停止</span>
+              <span>${t('chat.timerAutoStop')}</span>
               <label class="ha-toggle"><input type="checkbox" id="hosted-agent-timer-on"><span class="ha-toggle-track"></span></label>
             </div>
             <div class="ha-timer-body" id="ha-timer-body" style="display:none">
               <input type="range" class="ha-slider" id="hosted-agent-auto-stop" min="5" max="120" step="5" value="30">
-              <div class="ha-slider-ticks"><span>5分</span><span>30分</span><span>60分</span><span>120分</span></div>
+              <div class="ha-slider-ticks"><span>5m</span><span>30m</span><span>60m</span><span>120m</span></div>
               <div class="ha-countdown" id="ha-countdown" style="display:none">
                 <div class="ha-countdown-bar"><div class="ha-countdown-fill" id="ha-countdown-fill"></div></div>
-                <span class="ha-countdown-text" id="ha-countdown-text">剩余 --:--</span>
+                <span class="ha-countdown-text" id="ha-countdown-text">${t('chat.remaining')} --:--</span>
               </div>
             </div>
           </div>
@@ -212,23 +213,23 @@ export async function render() {
           <input type="hidden" id="hosted-agent-retry" value="2">
         </div>
         <div class="hosted-agent-actions">
-          <button class="btn btn-primary" id="hosted-agent-save" style="flex:1">▶ 启动托管</button>
+          <button class="btn btn-primary" id="hosted-agent-save" style="flex:1">${t('chat.startHosted')}</button>
         </div>
-        <div class="hosted-agent-footer" id="hosted-agent-status">就绪</div>
+        <div class="hosted-agent-footer" id="hosted-agent-status">${t('chat.ready')}</div>
       </div>
-      <div class="chat-disconnect-bar" id="chat-disconnect-bar" style="display:none">连接已断开，正在重连...</div>
+      <div class="chat-disconnect-bar" id="chat-disconnect-bar" style="display:none">${t('chat.disconnected')}</div>
       <div class="chat-connect-overlay" id="chat-connect-overlay" style="display:none">
         <div class="chat-connect-card">
           <div class="chat-connect-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
           </div>
-          <div class="chat-connect-title">Gateway 连接未就绪</div>
-          <div class="chat-connect-desc" id="chat-connect-desc">正在连接 Gateway...</div>
+          <div class="chat-connect-title">${t('chat.gatewayNotReady')}</div>
+          <div class="chat-connect-desc" id="chat-connect-desc">${t('chat.connectingGateway')}</div>
           <div class="chat-connect-actions">
-            <button class="btn btn-primary btn-sm" id="btn-fix-connect">修复并重连</button>
-            <button class="btn btn-secondary btn-sm" id="btn-goto-gateway">Gateway 设置</button>
+            <button class="btn btn-primary btn-sm" id="btn-fix-connect">${t('chat.fixAndReconnect')}</button>
+            <button class="btn btn-secondary btn-sm" id="btn-goto-gateway">${t('chat.gatewaySettings')}</button>
           </div>
-          <div class="chat-connect-hint">首次使用？请确保 Gateway 已启动，或点击「修复并重连」自动修复配置</div>
+          <div class="chat-connect-hint">${t('chat.firstUseHint')}</div>
         </div>
       </div>
     </div>
@@ -283,11 +284,11 @@ function showPageGuide(container) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
       </div>
       <div class="chat-guide-content">
-        <b>你正在使用「实时聊天」</b>
-        <p>此页面通过 <b>Gateway</b> 连接 OpenClaw 的 AI Agent，对话由你部署的 OpenClaw 服务处理。</p>
-        <p style="opacity:0.7;font-size:11px">如需使用 ClawPanel 内置 AI 助手（独立于 OpenClaw），请前往左侧菜单「AI 助手」页面。</p>
+        <b>${t('chat.guideTitle')}</b>
+        <p>${t('chat.guideDesc')}</p>
+        <p style="opacity:0.7;font-size:11px">${t('chat.guideHint')}</p>
       </div>
-      <button class="chat-guide-close" title="知道了">&times;</button>
+      <button class="chat-guide-close" title="${t('chat.guideClose')}">&times;</button>
     </div>
   `
   guide.querySelector('.chat-guide-close').onclick = () => {
@@ -390,12 +391,12 @@ function bindEvents(page) {
 async function loadModelOptions(showToast = false) {
   if (!_modelSelectEl) return
   // 显示加载状态
-  _modelSelectEl.innerHTML = '<option value="">加载模型中...</option>'
+  _modelSelectEl.innerHTML = `<option value="">${t('chat.loadingModels')}</option>`
   _modelSelectEl.disabled = true
   try {
     invalidate('read_openclaw_config')
     const configPromise = api.readOpenclawConfig()
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('读取超时(8s)，请检查配置文件')), 8000))
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout(8s)')), 8000))
     const config = await Promise.race([configPromise, timeoutPromise])
     const providers = config?.models?.providers || {}
     _primaryModel = config?.agents?.defaults?.model?.primary || ''
@@ -419,30 +420,30 @@ async function loadModelOptions(showToast = false) {
     const saved = localStorage.getItem(STORAGE_MODEL_KEY) || ''
     _selectedModel = models.includes(saved) ? saved : (_primaryModel || models[0] || '')
     renderModelSelect()
-    if (showToast) toast(`已刷新，共 ${models.length} 个模型`, 'success')
+    if (showToast) toast(`${t('chat.refreshModels')} (${models.length})`, 'success')
   } catch (e) {
     _availableModels = []
     _primaryModel = ''
     _selectedModel = ''
-    renderModelSelect(`加载失败: ${e.message || e}`)
-    if (showToast) toast('加载模型失败: ' + (e.message || e), 'error')
+    renderModelSelect(`${t('common.loadFailed')}: ${e.message || e}`)
+    if (showToast) toast(`${t('common.loadFailed')}: ${e.message || e}`, 'error')
   }
 }
 
 function renderModelSelect(errorText = '') {
   if (!_modelSelectEl) return
   if (!_availableModels.length) {
-    _modelSelectEl.innerHTML = `<option value="">${escapeAttr(errorText || '未配置模型')}</option>`
+    _modelSelectEl.innerHTML = `<option value="">${escapeAttr(errorText || t('chat.loadingModels'))}</option>`
     _modelSelectEl.disabled = true
-    _modelSelectEl.title = errorText || '请先到模型配置页面添加模型'
+    _modelSelectEl.title = errorText || ''
     return
   }
   _modelSelectEl.disabled = _isApplyingModel
   _modelSelectEl.innerHTML = _availableModels.map(full => {
-    const suffix = full === _primaryModel ? '（主模型）' : ''
+    const suffix = full === _primaryModel ? ` ${t('chat.defaultSuffix')}` : ''
     return `<option value="${escapeAttr(full)}" ${full === _selectedModel ? 'selected' : ''}>${full}${suffix}</option>`
   }).join('')
-  _modelSelectEl.title = _selectedModel ? `切换当前会话模型：${_selectedModel}` : '切换当前会话模型'
+  _modelSelectEl.title = _selectedModel || ''
 }
 
 function escapeAttr(str) {
@@ -474,20 +475,20 @@ function setSidebarOpen(open) {
 
 async function applySelectedModel() {
   if (!_selectedModel) {
-    toast('请先选择模型', 'warning')
+    toast(t('chat.loadingModels'), 'warning')
     return
   }
   if (!wsClient.gatewayReady || !_sessionKey) {
-    toast('Gateway 未就绪，连接成功后再切换模型', 'warning')
+    toast(t('chat.gatewayNotReadySend'), 'warning')
     return
   }
   _isApplyingModel = true
   renderModelSelect()
   try {
     await wsClient.chatSend(_sessionKey, `/model ${_selectedModel}`)
-    toast(`已切换当前会话模型为 ${_selectedModel}`, 'success')
+    toast(`${_selectedModel}`, 'success')
   } catch (e) {
-    toast('切换模型失败: ' + (e.message || e), 'error')
+    toast(`${t('chat.sendFailed')}${e.message || e}`, 'error')
   } finally {
     _isApplyingModel = false
     renderModelSelect()
@@ -503,21 +504,21 @@ function bindConnectOverlay(page) {
   if (fixBtn) {
     fixBtn.addEventListener('click', async () => {
       fixBtn.disabled = true
-      fixBtn.textContent = '修复中...'
+      fixBtn.textContent = t('chat.fixing')
       const desc = document.getElementById('chat-connect-desc')
       try {
-        if (desc) desc.textContent = '正在写入配置并重载 Gateway...'
+        if (desc) desc.textContent = t('chat.writingConfig')
         await api.autoPairDevice()
         await api.reloadGateway()
-        if (desc) desc.textContent = '修复完成，正在重连...'
+        if (desc) desc.textContent = t('chat.fixDoneReconnecting')
         // 断开旧连接，重新发起
         wsClient.disconnect()
         setTimeout(() => connectGateway(), 3000)
       } catch (e) {
-        if (desc) desc.textContent = '修复失败: ' + (e.message || e)
+        if (desc) desc.textContent = `${t('chat.fixFailed')}${e.message || e}`
       } finally {
         fixBtn.disabled = false
-        fixBtn.textContent = '修复并重连'
+        fixBtn.textContent = t('chat.fixAndReconnect')
       }
     })
   }
@@ -535,11 +536,11 @@ async function handleFileSelect(e) {
 
   for (const file of files) {
     if (!file.type.startsWith('image/')) {
-      toast('仅支持图片文件', 'warning')
+      toast(t('chat.imageOnly'), 'warning')
       continue
     }
     if (file.size > 5 * 1024 * 1024) {
-      toast(`${file.name} 超过 5MB 限制`, 'warning')
+      toast(`${file.name} > 5MB`, 'warning')
       continue
     }
 
@@ -553,7 +554,7 @@ async function handleFileSelect(e) {
       })
       renderAttachments()
     } catch (e) {
-      toast(`读取 ${file.name} 失败`, 'error')
+      toast(`${t('chat.readFileFailed')} ${file.name}`, 'error')
     }
   }
   _fileInputEl.value = ''
@@ -567,12 +568,12 @@ async function handlePaste(e) {
   for (const item of imageItems) {
     const file = item.getAsFile()
     if (!file) continue
-    if (file.size > 5 * 1024 * 1024) { toast('粘贴的图片超过 5MB 限制', 'warning'); continue }
+    if (file.size > 5 * 1024 * 1024) { toast(t('chat.imageSizeLimit'), 'warning'); continue }
     try {
       const base64 = await fileToBase64(file)
       _attachments.push({ type: 'image', mimeType: file.type || 'image/png', fileName: `paste-${Date.now()}.png`, content: base64 })
       renderAttachments()
-    } catch (_) { toast('读取粘贴图片失败', 'error') }
+    } catch (_) { toast(t('chat.readFileFailed'), 'error') }
   }
 }
 
@@ -582,7 +583,7 @@ function fileToBase64(file) {
     reader.onload = () => {
       const dataUrl = reader.result
       const match = /^data:[^;]+;base64,(.+)$/.exec(dataUrl)
-      if (!match) { reject(new Error('无效的数据 URL')); return }
+      if (!match) { reject(new Error('invalid data URL')); return }
       resolve(match[1])
     }
     reader.onerror = reject
@@ -641,14 +642,14 @@ async function connectGateway() {
         if (bar) bar.style.display = 'none'
         if (overlay) {
           overlay.style.display = 'flex'
-          if (desc) desc.textContent = errorMsg || '连接 Gateway 失败'
+          if (desc) desc.textContent = errorMsg || t('chat.connectFailed')
         }
       } else if (status === 'reconnecting' || status === 'disconnected') {
         // 首次连接或多次重连失败时，显示引导遮罩而非底部小条
         if (!_hasEverConnected) {
-          if (overlay) { overlay.style.display = 'flex'; if (desc) desc.textContent = '正在连接 Gateway...' }
+          if (overlay) { overlay.style.display = 'flex'; if (desc) desc.textContent = t('chat.connectingGateway') }
         } else {
-          if (bar) { bar.textContent = '连接已断开，正在重连...'; bar.style.display = 'flex' }
+          if (bar) { bar.textContent = t('chat.disconnected'); bar.style.display = 'flex' }
         }
       } else {
         if (bar) bar.style.display = 'none'
@@ -662,7 +663,7 @@ async function connectGateway() {
         if (overlay) {
           overlay.style.display = 'flex'
           const desc = document.getElementById('chat-connect-desc')
-          if (desc) desc.textContent = err.message || '连接失败'
+          if (desc) desc.textContent = err.message || t('chat.connectFailed')
         }
         return
       }
@@ -706,7 +707,7 @@ async function connectGateway() {
     const token = gw.auth?.token || gw.authToken || ''
     wsClient.connect(host, token)
   } catch (e) {
-    toast('读取配置失败: ' + e.message, 'error')
+    toast(`${t('common.loadFailed')}: ${e.message}`, 'error')
   }
 }
 
@@ -726,7 +727,7 @@ async function refreshSessionList() {
 function renderSessionList(sessions) {
   if (!_sessionListEl) return
   if (!sessions.length) {
-    _sessionListEl.innerHTML = '<div class="chat-session-empty">暂无会话</div>'
+    _sessionListEl.innerHTML = `<div class="chat-session-empty">${t('chat.noSessions')}</div>`
     return
   }
   sessions.sort((a, b) => (b.updatedAt || b.lastActivity || 0) - (a.updatedAt || a.lastActivity || 0))
@@ -741,12 +742,12 @@ function renderSessionList(sessions) {
     const displayLabel = getDisplayLabel(key) || label
     return `<div class="chat-session-card${active}" data-key="${escapeAttr(key)}">
       <div class="chat-session-card-header">
-        <span class="chat-session-label" title="双击重命名">${escapeAttr(displayLabel)}</span>
-        <button class="chat-session-del" data-del="${escapeAttr(key)}" title="删除">×</button>
+        <span class="chat-session-label" title="${t('chat.doubleClickRename')}">${escapeAttr(displayLabel)}</span>
+        <button class="chat-session-del" data-del="${escapeAttr(key)}" title="${t('common.delete')}">×</button>
       </div>
       <div class="chat-session-card-meta">
         ${agentId && agentId !== 'main' ? `<span class="chat-session-agent">${escapeAttr(agentId)}</span>` : ''}
-        ${msgCount > 0 ? `<span>${msgCount} 条消息</span>` : ''}
+        ${msgCount > 0 ? `<span>${msgCount} msgs</span>` : ''}
         ${timeStr ? `<span>${timeStr}</span>` : ''}
       </div>
     </div>`
@@ -773,10 +774,10 @@ function formatSessionTime(ts) {
   if (isNaN(d.getTime())) return ''
   const now = new Date()
   const diffMs = now - d
-  if (diffMs < 60000) return '刚刚'
-  if (diffMs < 3600000) return Math.floor(diffMs / 60000) + ' 分钟前'
-  if (diffMs < 86400000) return Math.floor(diffMs / 3600000) + ' 小时前'
-  if (diffMs < 604800000) return Math.floor(diffMs / 86400000) + ' 天前'
+  if (diffMs < 60000) return t('chat.justNow')
+  if (diffMs < 3600000) return t('chat.minutesAgo', { n: Math.floor(diffMs / 60000) })
+  if (diffMs < 86400000) return t('chat.hoursAgo', { n: Math.floor(diffMs / 3600000) })
+  if (diffMs < 604800000) return t('chat.daysAgo', { n: Math.floor(diffMs / 86400000) })
   return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
 }
 
@@ -787,10 +788,10 @@ function parseSessionAgent(key) {
 
 function parseSessionLabel(key) {
   const parts = (key || '').split(':')
-  if (parts.length < 3) return key || '未知'
+  if (parts.length < 3) return key || t('common.unknown')
   const agent = parts[1] || 'main'
   const channel = parts.slice(2).join(':')
-  if (agent === 'main' && channel === 'main') return '主会话'
+  if (agent === 'main' && channel === 'main') return t('chat.mainSession')
   if (agent === 'main') return channel
   return `${agent} / ${channel}`
 }
@@ -812,27 +813,27 @@ async function showNewSessionDialog() {
 
   // 先用默认选项立即显示弹窗
   const initialOptions = [
-    { value: 'main', label: 'main (默认)' },
-    { value: '__new__', label: '+ 新建 Agent' }
+    { value: 'main', label: `main ${t('chat.defaultSuffix')}` },
+    { value: '__new__', label: `+ ${t('chat.newAgent')}` }
   ]
 
   showModal({
-    title: '新建会话',
+    title: t('chat.newSession'),
     fields: [
-      { name: 'name', label: '会话名称', value: '', placeholder: '例如：翻译助手' },
+      { name: 'name', label: t('chat.sessionName'), value: '', placeholder: t('chat.sessionNamePlaceholder') },
       { name: 'agent', label: 'Agent', type: 'select', value: defaultAgent, options: initialOptions },
     ],
     onConfirm: (result) => {
       const name = (result.name || '').trim()
-      if (!name) { toast('请输入会话名称', 'warning'); return }
+      if (!name) { toast(t('chat.enterSessionName'), 'warning'); return }
       const agent = result.agent || defaultAgent
       if (agent === '__new__') {
         navigate('/agents')
-        toast('请在 Agent 管理页面创建新 Agent', 'info')
+        toast(t('chat.createAgentHint'), 'info')
         return
       }
       switchSession(`agent:${agent}:${name}`)
-      toast('会话已创建', 'success')
+      toast(t('chat.sessionCreated'), 'success')
     }
   })
 
@@ -841,9 +842,9 @@ async function showNewSessionDialog() {
     const agents = await api.listAgents()
     const agentOptions = agents.map(a => ({
       value: a.id,
-      label: `${a.id}${a.isDefault ? ' (默认)' : ''}${a.identityName ? ' — ' + a.identityName.split(',')[0] : ''}`
+      label: `${a.id}${a.isDefault ? ` ${t('chat.defaultSuffix')}` : ''}${a.identityName ? ' — ' + a.identityName.split(',')[0] : ''}`
     }))
-    agentOptions.push({ value: '__new__', label: '+ 新建 Agent' })
+    agentOptions.push({ value: '__new__', label: `+ ${t('chat.newAgent')}` })
 
     // 更新弹窗中的下拉框选项
     const selectEl = document.querySelector('.modal-overlay [data-name="agent"]')
@@ -860,33 +861,33 @@ async function showNewSessionDialog() {
 
 async function deleteSession(key) {
   const mainKey = wsClient.snapshot?.sessionDefaults?.mainSessionKey || 'agent:main:main'
-  if (key === mainKey) { toast('主会话不能删除', 'warning'); return }
+  if (key === mainKey) { toast(t('chat.cannotDeleteMain'), 'warning'); return }
   const label = parseSessionLabel(key)
-  const yes = await showConfirm(`确定删除会话「${label}」？`)
+  const yes = await showConfirm(t('chat.confirmDeleteSession', { label }))
   if (!yes) return
   try {
     await wsClient.sessionsDelete(key)
-    toast('会话已删除', 'success')
+    toast(t('chat.sessionDeleted'), 'success')
     if (key === _sessionKey) switchSession(mainKey)
     else refreshSessionList()
   } catch (e) {
-    toast('删除失败: ' + e.message, 'error')
+    toast(`${t('common.operationFailed')}: ${e.message}`, 'error')
   }
 }
 
 async function resetCurrentSession() {
   if (!_sessionKey) return
   const label = getDisplayLabel(_sessionKey)
-  const yes = await showConfirm(`确定要重置会话「${label}」吗？\n\n重置后将清空该会话的所有聊天记录，此操作不可撤销。`)
+  const yes = await showConfirm(t('chat.confirmResetSession', { label }))
   if (!yes) return
   try {
     await wsClient.sessionsReset(_sessionKey)
     clearMessages()
     _lastHistoryHash = ''
-    appendSystemMessage('会话已重置')
-    toast('会话已重置', 'success')
+    appendSystemMessage(t('chat.sessionResetDone'))
+    toast(t('chat.sessionResetDone'), 'success')
   } catch (e) {
-    toast('重置失败: ' + e.message, 'error')
+    toast(`${t('common.operationFailed')}: ${e.message}`, 'error')
   }
 }
 
@@ -915,7 +916,7 @@ function renameSession(key, labelEl) {
     const newName = input.value.trim()
     if (newName && newName !== parseSessionLabel(key)) {
       setSessionName(key, newName)
-      toast('会话已重命名', 'success')
+      toast(t('chat.sessionRenamed'), 'success')
     } else if (!newName || newName === parseSessionLabel(key)) {
       setSessionName(key, '') // clear custom name
     }
@@ -936,11 +937,11 @@ function showCmdPanel() {
   if (!_cmdPanelEl) return
   let html = ''
   for (const group of COMMANDS) {
-    html += `<div class="cmd-group-title">${group.title}</div>`
+    html += `<div class="cmd-group-title">${t(group.title)}</div>`
     for (const c of group.commands) {
       html += `<div class="cmd-item" data-cmd="${c.cmd}" data-action="${c.action}">
         <span class="cmd-name">${c.cmd}</span>
-        <span class="cmd-desc">${c.desc}</span>
+        <span class="cmd-desc">${t(c.desc)}</span>
       </div>`
     }
   }
@@ -976,7 +977,7 @@ function sendMessage() {
   const text = _textarea.value.trim()
   if (!text && !_attachments.length) return
   if (!wsClient.gatewayReady || !_sessionKey) {
-    toast('Gateway 未就绪，连接成功后再发送', 'warning')
+    toast(t('chat.gatewayNotReadySend'), 'warning')
     return
   }
   hideCmdPanel()
@@ -992,7 +993,7 @@ function sendMessage() {
 
 async function doSend(text, attachments = []) {
   if (!wsClient.gatewayReady || !_sessionKey) {
-    toast('Gateway 未就绪，连接成功后再发送', 'warning')
+    toast(t('chat.gatewayNotReadySend'), 'warning')
     return
   }
   appendUserMessage(text, attachments)
@@ -1008,7 +1009,7 @@ async function doSend(text, attachments = []) {
   } catch (err) {
     showTyping(false)
     _cancelResponseWatchdog()
-    appendSystemMessage('发送失败: ' + err.message)
+    appendSystemMessage(`${t('chat.sendFailed')}${err.message}`)
   } finally {
     _isSending = false
     updateSendState()
@@ -1053,7 +1054,7 @@ function handleEvent(msg) {
     // 工具执行反馈：更新 typing 提示文字
     const toolName = payload.data?.name || payload.data?.toolName || ''
     if (toolName && !_isStreaming) {
-      showTyping(true, `正在使用工具: ${toolName}`)
+      showTyping(true, t('chat.usingTool', { name: toolName }))
     }
   }
 
@@ -1113,7 +1114,7 @@ function handleChatEvent(payload) {
           if (_currentAiBubble && _currentAiText) {
             _currentAiBubble.innerHTML = renderMarkdown(_currentAiText)
           }
-          appendSystemMessage('输出超时，已自动结束')
+          appendSystemMessage(t('chat.streamTimeout'))
           resetStreamState()
           processMessageQueue()
         }
@@ -1134,7 +1135,7 @@ function handleChatEvent(payload) {
     let finalTools = c?.tools || []
     if (!finalTools.length && runId) {
       const ids = _toolRunIndex.get(runId) || []
-      finalTools = ids.map(id => mergeToolEventData({ id, name: '工具' })).filter(Boolean)
+      finalTools = ids.map(id => mergeToolEventData({ id, name: 'tool' })).filter(Boolean)
     }
     if (finalImages.length) _currentAiImages = finalImages
     if (finalVideos.length) _currentAiVideos = finalVideos
@@ -1208,7 +1209,7 @@ function handleChatEvent(payload) {
       if (capturedText) {
         appendHostedTarget(capturedText)
         if (detectStopFromText(capturedText)) {
-          appendHostedOutput('OpenClaw 回复包含完成信号，自动停止')
+          appendHostedOutput(t('chat.hostedAutoStopSignal'))
           stopHostedAgent()
         } else {
           maybeTriggerHostedRun()
@@ -1226,14 +1227,14 @@ function handleChatEvent(payload) {
     if (_currentAiBubble && _currentAiText) {
       _currentAiBubble.innerHTML = renderMarkdown(_currentAiText)
     }
-    appendSystemMessage('生成已停止')
+    appendSystemMessage(t('chat.generationStopped'))
     resetStreamState()
     processMessageQueue()
     return
   }
 
   if (state === 'error') {
-    const errMsg = payload.errorMessage || payload.error?.message || '未知错误'
+    const errMsg = payload.errorMessage || payload.error?.message || t('common.error')
 
     // 连接级错误（origin/pairing/auth）拦截，不作为聊天消息显示
     if (/origin not allowed|NOT_PAIRED|PAIRING_REQUIRED|auth.*fail/i.test(errMsg)) {
@@ -1242,7 +1243,7 @@ function handleChatEvent(payload) {
       if (overlay) {
         overlay.style.display = 'flex'
         const desc = document.getElementById('chat-connect-desc')
-        if (desc) desc.textContent = '连接被 Gateway 拒绝，请点击「修复并重连」'
+        if (desc) desc.textContent = t('chat.connectionRejected')
       }
       return
     }
@@ -1263,7 +1264,7 @@ function handleChatEvent(payload) {
     }
 
     showTyping(false)
-    appendSystemMessage('错误: ' + errMsg)
+    appendSystemMessage(`${t('chat.errorPrefix')}${errMsg}`)
     resetStreamState()
     processMessageQueue()
     return
@@ -1279,7 +1280,7 @@ function extractChatContent(message) {
     const output = typeof message.content === 'string' ? message.content : null
     if (!tools.length) {
       tools.push({
-        name: message.name || message.tool || message.tool_name || '工具',
+        name: message.name || message.tool || message.tool_name || 'tool',
         input: message.input || message.args || message.parameters || null,
         output: output || message.output || message.result || null,
         status: message.status || 'ok',
@@ -1310,13 +1311,13 @@ function extractChatContent(message) {
         else if (block.url) audios.push({ url: block.url, mediaType: block.mimeType || 'audio/mpeg', duration: block.duration })
       }
       else if (block.type === 'file' || block.type === 'document') {
-        files.push({ url: block.url || '', name: block.fileName || block.name || '文件', mimeType: block.mimeType || '', size: block.size, data: block.data })
+        files.push({ url: block.url || '', name: block.fileName || block.name || 'file', mimeType: block.mimeType || '', size: block.size, data: block.data })
       }
       else if (block.type === 'tool' || block.type === 'tool_use' || block.type === 'tool_call' || block.type === 'toolCall') {
         const callId = block.id || block.tool_call_id || block.toolCallId
         upsertTool(tools, {
           id: callId,
-          name: block.name || block.tool || block.tool_name || block.toolName || '工具',
+          name: block.name || block.tool || block.tool_name || block.toolName || 'tool',
           input: block.input || block.args || block.parameters || block.arguments || null,
           output: null,
           status: block.status || 'ok',
@@ -1327,7 +1328,7 @@ function extractChatContent(message) {
         const resId = block.id || block.tool_call_id || block.toolCallId
         upsertTool(tools, {
           id: resId,
-          name: block.name || block.tool || block.tool_name || block.toolName || '工具',
+          name: block.name || block.tool || block.tool_name || block.toolName || 'tool',
           input: block.input || block.args || null,
           output: block.output || block.result || block.content || null,
           status: block.status || 'ok',
@@ -1348,7 +1349,7 @@ function extractChatContent(message) {
       if (/\.(mp4|webm|mov|mkv)(\?|$)/i.test(url)) videos.push({ url, mediaType: 'video/mp4' })
       else if (/\.(mp3|wav|ogg|m4a|aac|flac)(\?|$)/i.test(url)) audios.push({ url, mediaType: 'audio/mpeg' })
       else if (/\.(jpe?g|png|gif|webp|heic|svg)(\?|$)/i.test(url)) images.push({ url, mediaType: 'image/png' })
-      else files.push({ url, name: url.split('/').pop().split('?')[0] || '文件', mimeType: '' })
+      else files.push({ url, name: url.split('/').pop().split('?')[0] || 'file', mimeType: '' })
     }
     const text = texts.length ? stripThinkingTags(texts.join('\n')) : ''
     return { text, images, videos, audios, files, tools }
@@ -1571,7 +1572,7 @@ async function loadHistory() {
   try {
     const result = await wsClient.chatHistory(_sessionKey, 200)
     if (!result?.messages?.length) {
-      if (_messagesEl && !_messagesEl.querySelector('.msg')) appendSystemMessage('还没有消息，开始聊天吧')
+      if (_messagesEl && !_messagesEl.querySelector('.msg')) appendSystemMessage(t('chat.noMessages'))
       return
     }
     const deduped = dedupeHistory(result.messages)
@@ -1608,7 +1609,7 @@ async function loadHistory() {
       }
     })
     if (hasOmittedImages) {
-      appendSystemMessage('部分历史图片无法显示（Gateway 不保留图片原始数据，仅当前会话内可见）')
+      appendSystemMessage(t('chat.imageHistoryHint'))
     }
     saveMessages(result.messages.map(m => {
       const c = extractContent(m)
@@ -1618,7 +1619,7 @@ async function loadHistory() {
     scrollToBottom()
   } catch (e) {
     console.error('[chat] loadHistory error:', e)
-    if (_messagesEl && !_messagesEl.querySelector('.msg')) appendSystemMessage('加载历史失败: ' + e.message)
+    if (_messagesEl && !_messagesEl.querySelector('.msg')) appendSystemMessage(`${t('common.loadFailed')}: ${e.message}`)
   } finally {
     _isLoadingHistory = false
   }
@@ -1664,7 +1665,7 @@ function extractContent(msg) {
     if (!tools.length) {
       upsertTool(tools, {
         id: msg.id || msg.tool_call_id || msg.toolCallId,
-        name: msg.name || msg.tool || msg.tool_name || '工具',
+        name: msg.name || msg.tool || msg.tool_name || 'tool',
         input: msg.input || msg.args || msg.parameters || null,
         output: output || msg.output || msg.result || null,
         status: msg.status || 'ok',
@@ -1694,13 +1695,13 @@ function extractContent(msg) {
         else if (block.url) audios.push({ url: block.url, mediaType: block.mimeType || 'audio/mpeg', duration: block.duration })
       }
       else if (block.type === 'file' || block.type === 'document') {
-        files.push({ url: block.url || '', name: block.fileName || block.name || '文件', mimeType: block.mimeType || '', size: block.size, data: block.data })
+        files.push({ url: block.url || '', name: block.fileName || block.name || 'file', mimeType: block.mimeType || '', size: block.size, data: block.data })
       }
       else if (block.type === 'tool' || block.type === 'tool_use' || block.type === 'tool_call' || block.type === 'toolCall') {
         const callId = block.id || block.tool_call_id || block.toolCallId
         upsertTool(tools, {
           id: callId,
-          name: block.name || block.tool || block.tool_name || block.toolName || '工具',
+          name: block.name || block.tool || block.tool_name || block.toolName || 'tool',
           input: block.input || block.args || block.parameters || block.arguments || null,
           output: null,
           status: block.status || 'ok',
@@ -1711,7 +1712,7 @@ function extractContent(msg) {
         const resId = block.id || block.tool_call_id || block.toolCallId
         upsertTool(tools, {
           id: resId,
-          name: block.name || block.tool || block.tool_name || block.toolName || '工具',
+          name: block.name || block.tool || block.tool_name || block.toolName || 'tool',
           input: block.input || block.args || null,
           output: block.output || block.result || block.content || null,
           status: block.status || 'ok',
@@ -1731,7 +1732,7 @@ function extractContent(msg) {
       if (/\.(mp4|webm|mov|mkv)(\?|$)/i.test(url)) videos.push({ url, mediaType: 'video/mp4' })
       else if (/\.(mp3|wav|ogg|m4a|aac|flac)(\?|$)/i.test(url)) audios.push({ url, mediaType: 'audio/mpeg' })
       else if (/\.(jpe?g|png|gif|webp|heic|svg)(\?|$)/i.test(url)) images.push({ url, mediaType: 'image/png' })
-      else files.push({ url, name: url.split('/').pop().split('?')[0] || '文件', mimeType: '' })
+      else files.push({ url, name: url.split('/').pop().split('?')[0] || 'file', mimeType: '' })
     }
     return { text: stripThinkingTags(texts.join('\n')), images, videos, audios, files, tools }
   }
@@ -1897,7 +1898,7 @@ function appendFilesToEl(el, files) {
     const fileIconMap = { pdf: 'file', doc: 'file-text', docx: 'file-text', txt: 'file-plain', md: 'file-plain', json: 'clipboard', csv: 'bar-chart', zip: 'package', rar: 'package' }
     const fileIcon = svgIcon(fileIconMap[ext] || 'paperclip', 16)
     const size = f.size ? formatFileSize(f.size) : ''
-    card.innerHTML = `<span class="msg-file-icon">${fileIcon}</span><div class="msg-file-info"><span class="msg-file-name">${f.name || '文件'}</span>${size ? `<span class="msg-file-size">${size}</span>` : ''}</div>`
+    card.innerHTML = `<span class="msg-file-icon">${fileIcon}</span><div class="msg-file-info"><span class="msg-file-name">${f.name || 'file'}</span>${size ? `<span class="msg-file-size">${size}</span>` : ''}</div>`
     if (f.url) {
       card.style.cursor = 'pointer'
       card.onclick = () => window.open(f.url, '_blank')
@@ -1906,7 +1907,7 @@ function appendFilesToEl(el, files) {
       card.onclick = () => {
         const a = document.createElement('a')
         a.href = `data:${f.mimeType || 'application/octet-stream'};base64,${f.data}`
-        a.download = f.name || '文件'
+        a.download = f.name || 'file'
         a.click()
       }
     }
@@ -1953,7 +1954,7 @@ function collectToolsFromMessage(message, tools) {
       const callId = call.id || call.tool_call_id
       upsertTool(tools, {
         id: callId,
-        name: name || '工具',
+        name: name || 'tool',
         input,
         output: null,
         status: call.status || 'ok',
@@ -1967,7 +1968,7 @@ function collectToolsFromMessage(message, tools) {
       const resId = res.id || res.tool_call_id
       upsertTool(tools, {
         id: resId,
-        name: res.name || res.tool || res.tool_name || '工具',
+        name: res.name || res.tool || res.tool_name || 'tool',
         input: res.input || res.args || null,
         output: res.output || res.result || res.content || null,
         status: res.status || 'ok',
@@ -1991,16 +1992,16 @@ function appendToolsToEl(el, tools) {
     const details = document.createElement('details')
     details.className = 'msg-tool-item'
     const summary = document.createElement('summary')
-    const status = tool.status === 'error' ? '失败' : '成功'
+    const status = tool.status === 'error' ? t('chat.toolFailed') : t('chat.toolSuccess')
     const timeValue = getToolTime(tool) || resolveToolTime(tool.id || tool.tool_call_id, tool.messageTimestamp)
     const timeText = timeValue ? formatTime(new Date(timeValue)) : ''
-    summary.innerHTML = `${escapeHtml(tool.name || '工具')} · ${status}${timeText ? ' · ' + timeText : ''}`
+    summary.innerHTML = `${escapeHtml(tool.name || 'tool')} · ${status}${timeText ? ' · ' + timeText : ''}`
     const body = document.createElement('div')
     body.className = 'msg-tool-body'
     const inputJson = stripAnsi(safeStringify(tool.input))
     const outputJson = stripAnsi(safeStringify(tool.output))
-    body.innerHTML = `<div class="msg-tool-block"><div class="msg-tool-title">参数</div><pre>${escapeHtml(inputJson || '无参数')}</pre></div>`
-      + `<div class="msg-tool-block"><div class="msg-tool-title">结果</div><pre>${escapeHtml(outputJson || '无结果')}</pre></div>`
+    body.innerHTML = `<div class="msg-tool-block"><div class="msg-tool-title">${t('chat.toolParams')}</div><pre>${escapeHtml(inputJson || '-')}</pre></div>`
+      + `<div class="msg-tool-block"><div class="msg-tool-title">${t('chat.toolResult')}</div><pre>${escapeHtml(outputJson || '-')}</pre></div>`
     details.appendChild(summary)
     details.appendChild(body)
     container.appendChild(details)
@@ -2053,7 +2054,7 @@ function showCompactionHint(show) {
     hint = document.createElement('div')
     hint.id = 'compaction-hint'
     hint.className = 'msg msg-system compaction-hint'
-    hint.innerHTML = '🗜️ 正在整理上下文（Compaction）…'
+    hint.innerHTML = `🗜️ ${t('chat.compacting')}`
     _messagesEl.insertBefore(hint, _typingEl)
     scrollToBottom()
   } else if (!show && hint) {
@@ -2077,11 +2078,11 @@ function updateSendState() {
   if (_isStreaming) {
     _sendBtn.disabled = false
     _sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>'
-    _sendBtn.title = '停止生成'
+    _sendBtn.title = t('chat.cmdStopGen')
   } else {
     _sendBtn.disabled = !_textarea.value.trim() && !_attachments.length
     _sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
-    _sendBtn.title = '发送'
+    _sendBtn.title = t('chat.send')
   }
 }
 
@@ -2146,13 +2147,13 @@ function updateHostedBadge() {
   if (!_hostedBadgeEl || !_hostedSessionConfig) return
   const status = _hostedRuntime.status || HOSTED_STATUS.IDLE
   const enabled = _hostedSessionConfig.enabled
-  let text = '未启用', cls = 'chat-hosted-badge'
-  if (!enabled) { text = '未启用'; cls += ' idle' }
-  else if (status === HOSTED_STATUS.RUNNING) { text = '运行中'; cls += ' running' }
-  else if (status === HOSTED_STATUS.WAITING) { text = '等待回复'; cls += ' waiting' }
-  else if (status === HOSTED_STATUS.PAUSED) { text = '已暂停'; cls += ' paused' }
-  else if (status === HOSTED_STATUS.ERROR) { text = '异常'; cls += ' error' }
-  else { text = '待命'; cls += ' idle' }
+  let text = t('chat.hostedNotEnabled'), cls = 'chat-hosted-badge'
+  if (!enabled) { text = t('chat.hostedNotEnabled'); cls += ' idle' }
+  else if (status === HOSTED_STATUS.RUNNING) { text = t('chat.hostedRunning'); cls += ' running' }
+  else if (status === HOSTED_STATUS.WAITING) { text = t('chat.hostedWaiting'); cls += ' waiting' }
+  else if (status === HOSTED_STATUS.PAUSED) { text = t('chat.hostedPaused'); cls += ' paused' }
+  else if (status === HOSTED_STATUS.ERROR) { text = t('chat.hostedErrorStatus'); cls += ' error' }
+  else { text = t('chat.hostedStandby'); cls += ' idle' }
   _hostedBadgeEl.className = cls
   _hostedBadgeEl.textContent = text
 }
@@ -2175,7 +2176,7 @@ function renderHostedPanel() {
   if (timerToggle) { timerToggle.checked = (_hostedSessionConfig.autoStopMinutes || 0) > 0; timerToggle.disabled = isRunning }
   if (timerBody) timerBody.style.display = timerToggle?.checked ? '' : 'none'
   if (_hostedSaveBtn) {
-    _hostedSaveBtn.textContent = isRunning ? '⏹ 停止托管' : '▶ 启动托管'
+    _hostedSaveBtn.textContent = isRunning ? `⏹ ${t('chat.stopHosted')}` : `▶ ${t('chat.startHosted')}`
     _hostedSaveBtn.className = isRunning ? 'btn btn-ghost' : 'btn btn-primary'
     _hostedSaveBtn.style.flex = '1'
   }
@@ -2183,11 +2184,11 @@ function renderHostedPanel() {
   // 状态栏
   const statusEl = _hostedPanelEl.querySelector('#hosted-agent-status')
   if (statusEl) {
-    let msg = '就绪'
-    if (_hostedRuntime.lastError) msg = `错误: ${_hostedRuntime.lastError}`
+    let msg = t('chat.ready')
+    if (_hostedRuntime.lastError) msg = `${t('chat.errorPrefix')}${_hostedRuntime.lastError}`
     else if (isRunning) {
       const remaining = Math.max(0, _hostedSessionConfig.maxSteps - _hostedRuntime.stepCount)
-      msg = `运行中 · 剩余 ${remaining} 步`
+      msg = `${t('chat.hostedRunning')} · ${t('chat.remaining')} ${remaining}`
     }
     statusEl.textContent = msg
   }
@@ -2213,7 +2214,7 @@ function updateCountdown() {
   fillEl.style.width = pct + '%'
   const mins = Math.floor(remaining / 60000)
   const secs = Math.floor((remaining % 60000) / 1000)
-  textEl.textContent = `剩余 ${mins}:${secs.toString().padStart(2, '0')}`
+  textEl.textContent = `${t('chat.remaining')} ${mins}:${secs.toString().padStart(2, '0')}`
   if (!_countdownInterval) {
     _countdownInterval = setInterval(() => updateCountdown(), 1000)
   }
@@ -2232,7 +2233,7 @@ function toggleHostedRun() {
 async function startHostedAgent() {
   if (!_hostedSessionConfig) return
   const prompt = (_hostedPromptEl?.value || '').trim()
-  if (!prompt) { toast('请输入任务目标', 'warning'); return }
+  if (!prompt) { toast(t('chat.enterTaskGoal'), 'warning'); return }
   const rawSteps = parseInt(_hostedMaxStepsEl?.value || HOSTED_DEFAULTS.maxSteps, 10)
   const maxSteps = rawSteps >= 205 ? 999999 : Math.max(1, rawSteps)
   const stepDelayMs = Math.max(200, parseInt(_hostedStepDelayEl?.value || HOSTED_DEFAULTS.stepDelayMs, 10))
@@ -2240,7 +2241,7 @@ async function startHostedAgent() {
   const timerOn = _page?.querySelector('#hosted-agent-timer-on')?.checked
   const autoStopMinutes = timerOn ? Math.max(0, parseInt(_hostedAutoStopEl?.value || 0, 10)) : 0
   _hostedSessionConfig = { ..._hostedSessionConfig, prompt, enabled: true, maxSteps, stepDelayMs, retryLimit, autoStopMinutes }
-  const sysContent = HOSTED_SYSTEM_PROMPT + '\n\n用户目标: ' + prompt
+  const sysContent = HOSTED_SYSTEM_PROMPT + '\n\nUser goal: ' + prompt
   if (!_hostedSessionConfig.history?.length) _hostedSessionConfig.history = [{ role: 'system', content: sysContent }]
   else if (_hostedSessionConfig.history[0]?.role === 'system') _hostedSessionConfig.history[0].content = sysContent
   else _hostedSessionConfig.history.unshift({ role: 'system', content: sysContent })
@@ -2253,12 +2254,12 @@ async function startHostedAgent() {
   clearTimeout(_hostedAutoStopTimer)
   if (autoStopMinutes > 0) {
     _hostedAutoStopTimer = setTimeout(() => {
-      appendHostedOutput(`定时 ${autoStopMinutes} 分钟已到，自动停止`)
+      appendHostedOutput(t('chat.hostedTimerExpired', { min: autoStopMinutes }))
       stopHostedAgent()
     }, autoStopMinutes * 60000)
   }
-  if (!wsClient.gatewayReady || !_sessionKey) { toast('Gateway 未就绪，暂不启动', 'warning'); return }
-  toast('托管 Agent 已启动', 'success')
+  if (!wsClient.gatewayReady || !_sessionKey) { toast(t('chat.gatewayNotReadySend'), 'warning'); return }
+  toast(t('chat.hostedStarted'), 'success')
   runHostedAgentStep()
 }
 
@@ -2278,7 +2279,7 @@ function stopHostedAgent() {
   persistHostedRuntime()
   renderHostedPanel()
   updateHostedBadge()
-  toast('托管 Agent 已停止', 'info')
+  toast(t('chat.hostedStopped'), 'info')
 }
 
 function shouldCaptureHostedTarget(payload) {
@@ -2317,7 +2318,7 @@ function compressHostedContext() {
   const summary = older.map(h => `[${h.role}] ${(h.content || '').slice(0, 80)}`).join('\n')
   const compressed = []
   if (sysEntry) compressed.push(sysEntry)
-  compressed.push({ role: 'user', content: `[上下文摘要 - 已压缩 ${older.length} 条历史]\n${summary}`, ts: Date.now() })
+  compressed.push({ role: 'user', content: `[Context summary - compressed ${older.length} entries]\n${summary}`, ts: Date.now() })
   compressed.push(...recent)
   _hostedSessionConfig.history = compressed
   persistHostedRuntime()
@@ -2349,15 +2350,15 @@ async function runHostedAgentStep() {
   if (!prompt) return
   if (!wsClient.gatewayReady || !_sessionKey) {
     _hostedRuntime.status = HOSTED_STATUS.PAUSED
-    _hostedRuntime.lastError = 'Gateway 未就绪'
+    _hostedRuntime.lastError = 'Gateway not ready'
     persistHostedRuntime(); updateHostedBadge()
-    appendHostedOutput('需要人工介入: Gateway 未就绪')
+    appendHostedOutput(t('chat.hostedNeedIntervention'))
     return
   }
   if (_hostedRuntime.errorCount >= _hostedSessionConfig.retryLimit) {
     _hostedRuntime.status = HOSTED_STATUS.ERROR
     persistHostedRuntime(); updateHostedBadge()
-    appendHostedOutput('需要人工介入: 连续错误超过阈值')
+    appendHostedOutput(t('chat.hostedErrorThreshold'))
     return
   }
   if (_hostedRuntime.stepCount >= _hostedSessionConfig.maxSteps) {
@@ -2408,7 +2409,7 @@ async function runHostedAgentStep() {
     if (_hostedRuntime.errorCount >= _hostedSessionConfig.retryLimit) {
       _hostedRuntime.status = HOSTED_STATUS.ERROR
       persistHostedRuntime(); updateHostedBadge()
-      appendHostedOutput('需要人工介入: ' + _hostedRuntime.lastError)
+      appendHostedOutput(t('chat.hostedNeedIntervention', { reason: _hostedRuntime.lastError }))
       return
     }
     persistHostedRuntime(); updateHostedBadge()
@@ -2427,7 +2428,7 @@ async function callHostedAI(messages, onChunk) {
     config = { baseUrl: stored.baseUrl || '', apiKey: stored.apiKey || '', model: stored.model || '', temperature: stored.temperature || 0.7, apiType: stored.apiType || 'openai-completions' }
   } catch { config = { baseUrl: '', apiKey: '', model: '', temperature: 0.7, apiType: 'openai-completions' } }
 
-  if (!config.baseUrl || !config.model) throw new Error('托管 Agent 未配置模型（请在 AI 助手页面配置）')
+  if (!config.baseUrl || !config.model) throw new Error(t('chat.hostedModelNotConfigured'))
 
   let base = config.baseUrl.replace(/\/+$/, '').replace(/\/chat\/completions\/?$/, '').replace(/\/completions\/?$/, '').replace(/\/messages\/?$/, '').replace(/\/models\/?$/, '')
   if (_hostedAbort) { _hostedAbort.abort(); _hostedAbort = null }
@@ -2442,7 +2443,7 @@ async function callHostedAI(messages, onChunk) {
     const resp = await fetch(base + '/chat/completions', { method: 'POST', headers, body: JSON.stringify(body), signal })
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '')
-      let errMsg = `API 错误 ${resp.status}`
+      let errMsg = `API error ${resp.status}`
       try { errMsg = JSON.parse(errText).error?.message || errMsg } catch {}
       throw new Error(errMsg)
     }
@@ -2473,7 +2474,7 @@ function appendHostedOutput(text) {
   if (!text || !_messagesEl) return
   const wrap = document.createElement('div')
   wrap.className = 'msg msg-system msg-hosted'
-  wrap.textContent = `[托管 Agent] ${text}`
+  wrap.textContent = `[${t('chat.hostedAgent')}] ${text}`
   _messagesEl.insertBefore(wrap, _typingEl)
   scrollToBottom()
 }
