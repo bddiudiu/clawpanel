@@ -633,7 +633,7 @@ function renderCompany(page) {
         </div>
         <div style="padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-primary);background:var(--bg-secondary)">
           <div style="color:var(--text-tertiary);font-size:var(--font-size-xs);margin-bottom:4px">${t('about.businessCoop')}</div>
-          <span style="color:var(--text-primary)">${t('about.contactViaWebsite')}</span>
+          <a href="mailto:support@qctx.net" style="color:var(--accent)">support@qctx.net</a>
         </div>
       </div>
       <div style="font-size:var(--font-size-xs);color:var(--text-tertiary);line-height:1.6">
