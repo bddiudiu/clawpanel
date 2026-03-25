@@ -1337,15 +1337,16 @@ fn detect_installed_source() -> String {
     // Windows: 优先通过 CLI 路径判断，fallback 到文件系统检测
     #[cfg(target_os = "windows")]
     {
-        // 优先通过实际 CLI 路径判断（最准确）
+        // 优先通过实际 CLI 路径判断
         if let Some(cli_path) = crate::utils::resolve_openclaw_cli_path() {
             let source = crate::utils::classify_cli_source(&cli_path);
             if source == "npm-zh" {
                 return "chinese".into();
             }
-            if source == "npm-official" || source == "npm-global" || source == "standalone" {
+            if source == "standalone" {
                 return "official".into();
             }
+            // npm-official/npm-global: Windows .cmd shim 路径不含包名，需继续检查文件系统
         }
         // 检查所有可能的 standalone 安装目录
         for sa_dir in all_standalone_dirs() {
