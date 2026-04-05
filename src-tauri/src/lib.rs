@@ -123,6 +123,7 @@ pub fn run() {
             service::start_service,
             service::stop_service,
             service::restart_service,
+            service::claim_gateway,
             service::guardian_status,
             // 日志
             logs::read_log_tail,

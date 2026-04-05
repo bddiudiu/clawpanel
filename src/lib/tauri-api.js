@@ -188,6 +188,7 @@ export const api = {
   startService: (label) => { invalidate('get_services_status'); return invoke('start_service', { label }) },
   stopService: (label) => { invalidate('get_services_status'); return invoke('stop_service', { label }) },
   restartService: (label) => { invalidate('get_services_status'); return invoke('restart_service', { label }) },
+  claimGateway: () => { invalidate('get_services_status'); return invoke('claim_gateway') },
   guardianStatus: () => invoke('guardian_status'),
 
   // 配置（读缓存，写清缓存）

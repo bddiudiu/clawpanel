@@ -8,7 +8,7 @@ if (window._splashTimer) { clearTimeout(window._splashTimer); window._splashTime
 import { registerRoute, initRouter, navigate, setDefaultRoute } from './router.js'
 import { renderSidebar, openMobileSidebar } from './components/sidebar.js'
 import { initTheme } from './lib/theme.js'
-import { detectOpenclawStatus, isOpenclawReady, isUpgrading, isGatewayRunning, onGatewayChange, startGatewayPoll, onGuardianGiveUp, resetAutoRestart, loadActiveInstance, getActiveInstance, onInstanceChange } from './lib/app-state.js'
+import { detectOpenclawStatus, isOpenclawReady, isUpgrading, isGatewayRunning, isGatewayForeign, onGatewayChange, startGatewayPoll, onGuardianGiveUp, resetAutoRestart, loadActiveInstance, getActiveInstance, onInstanceChange } from './lib/app-state.js'
 import { wsClient } from './lib/ws-client.js'
 import { api, checkBackendHealth, isBackendOnline, isTauriRuntime, onBackendStatusChange } from './lib/tauri-api.js'
 import { version as APP_VERSION } from '../package.json'
@@ -525,17 +525,20 @@ function setupGatewayBanner() {
   const banner = document.getElementById('gw-banner')
   if (!banner) return
 
-  function update(running) {
+  function update(running, foreign) {
     if (running || sessionStorage.getItem('gw-banner-dismissed')) {
       banner.classList.add('gw-banner-hidden')
       return
-    } else {
-      banner.classList.remove('gw-banner-hidden')
+    }
+    banner.classList.remove('gw-banner-hidden')
+
+    if (foreign) {
+      // Gateway 在运行但属于外部实例 —— 显示认领按钮
       banner.innerHTML = `
         <div class="gw-banner-content">
-          <span class="gw-banner-icon">${statusIcon('info', 16)}</span>
-          <span>${t('dashboard.controlUINotRunning')}</span>
-          <button class="btn btn-sm btn-secondary" id="btn-gw-start" style="margin-left:auto">${t('dashboard.startBtn')}</button>
+          <span class="gw-banner-icon">${statusIcon('warning', 16)}</span>
+          <span>${t('dashboard.foreignGatewayBanner')}</span>
+          <button class="btn btn-sm btn-secondary" id="btn-gw-claim" style="margin-left:auto">${t('dashboard.claimGateway')}</button>
           <a class="btn btn-sm btn-ghost" href="#/services">${t('sidebar.services')}</a>
           <button class="gw-banner-close" id="btn-gw-dismiss" title="${t('common.close')}">&times;</button>
         </div>
@@ -544,7 +547,39 @@ function setupGatewayBanner() {
         banner.classList.add('gw-banner-hidden')
         sessionStorage.setItem('gw-banner-dismissed', '1')
       })
-      banner.querySelector('#btn-gw-start')?.addEventListener('click', async (e) => {
+      banner.querySelector('#btn-gw-claim')?.addEventListener('click', async (e) => {
+        const btn = e.target
+        btn.disabled = true
+        btn.textContent = t('common.processing')
+        try {
+          await api.claimGateway()
+          // 认领后立刻刷新全局状态
+          const { refreshGatewayStatus } = await import('./lib/app-state.js')
+          await refreshGatewayStatus()
+        } catch (err) {
+          btn.disabled = false
+          btn.textContent = t('dashboard.claimGateway')
+          console.error('[banner] claim failed:', err)
+        }
+      })
+      return
+    }
+
+    // Gateway 未运行 —— 显示启动按钮
+    banner.innerHTML = `
+      <div class="gw-banner-content">
+        <span class="gw-banner-icon">${statusIcon('info', 16)}</span>
+        <span>${t('dashboard.controlUINotRunning')}</span>
+        <button class="btn btn-sm btn-secondary" id="btn-gw-start" style="margin-left:auto">${t('dashboard.startBtn')}</button>
+        <a class="btn btn-sm btn-ghost" href="#/services">${t('sidebar.services')}</a>
+        <button class="gw-banner-close" id="btn-gw-dismiss" title="${t('common.close')}">&times;</button>
+      </div>
+    `
+    banner.querySelector('#btn-gw-dismiss')?.addEventListener('click', () => {
+      banner.classList.add('gw-banner-hidden')
+      sessionStorage.setItem('gw-banner-dismissed', '1')
+    })
+    banner.querySelector('#btn-gw-start')?.addEventListener('click', async (e) => {
         const btn = e.target
         btn.disabled = true
         btn.classList.add('btn-loading')
@@ -600,10 +635,9 @@ function setupGatewayBanner() {
         `
         update(false)
       })
-    }
   }
 
-  update(isGatewayRunning())
+  update(isGatewayRunning(), isGatewayForeign())
   onGatewayChange(update)
 }
 

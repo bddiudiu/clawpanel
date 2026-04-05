@@ -2354,10 +2354,10 @@ function matchesCurrentGatewayOwnerSignature(owner) {
   if (!owner || owner.startedBy !== 'clawpanel') return false
   const current = currentGatewayOwnerSignature()
   if (Number(owner.port || 0) !== current.port) return false
-  if (!current.cliPath) return false
-  const ownerCliPath = canonicalCliPath(owner.cliPath)
-  if (!ownerCliPath || ownerCliPath !== current.cliPath) return false
   if (!owner.openclawDir || path.resolve(owner.openclawDir) !== current.openclawDir) return false
+  // 仅当双方都有 cliPath 且不同时才视为不匹配；任一侧缺失时放宽为兼容（向后兼容旧记录/未绑定 CLI）
+  const ownerCliPath = canonicalCliPath(owner.cliPath)
+  if (ownerCliPath && current.cliPath && ownerCliPath !== current.cliPath) return false
   return true
 }
 
@@ -3028,6 +3028,15 @@ const handlers = {
     }
     winStartGateway()
     await waitForGatewayRunning(label)
+    return true
+  },
+
+  async claim_gateway() {
+    const label = 'ai.openclaw.gateway'
+    const status = await getLocalGatewayRuntime(label)
+    if (!status?.running) throw new Error('Gateway 未运行，无需认领')
+    writeGatewayOwner(status.pid || null)
+    serverCacheInvalidate('svc_status')
     return true
   },
 

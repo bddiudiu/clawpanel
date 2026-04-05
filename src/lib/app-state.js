@@ -12,6 +12,7 @@ const isTauri = !!window.__TAURI_INTERNALS__
 
 let _openclawReady = false
 let _gatewayRunning = false
+let _gatewayForeign = false
 let _platform = ''  // 'macos' | 'win32' | ...
 let _deployMode = 'local' // 'local' | 'docker'
 let _inDocker = false
@@ -54,9 +55,14 @@ export function onGuardianGiveUp(fn) {
   return () => { _guardianListeners = _guardianListeners.filter(cb => cb !== fn) }
 }
 
-/** Gateway 是否正在运行 */
+/** Gateway 是否正在运行（仅 owned） */
 export function isGatewayRunning() {
   return _gatewayRunning
+}
+
+/** Gateway 是否在运行但属于外部实例 */
+export function isGatewayForeign() {
+  return _gatewayForeign
 }
 
 /** 获取后端平台 ('macos' | 'win32') */
@@ -130,7 +136,8 @@ export async function detectOpenclawStatus() {
     // 顺便检测 Gateway 运行状态
     if (services.status === 'fulfilled' && services.value?.length > 0) {
       const gw = services.value.find?.(s => s.label === 'ai.openclaw.gateway') || services.value[0]
-      _setGatewayRunning(gw?.running === true && gw?.owned_by_current_instance !== false)
+      const foreign = gw?.running === true && gw?.owned_by_current_instance === false
+      _setGatewayRunning(gw?.running === true && !foreign, foreign)
     }
   } catch {
     _openclawReady = false
@@ -139,22 +146,24 @@ export async function detectOpenclawStatus() {
   return _openclawReady
 }
 
-function _setGatewayRunning(val) {
+function _setGatewayRunning(val, foreign = false) {
   const wasRunning = _gatewayRunning
-  const changed = wasRunning !== val
+  const wasForeign = _gatewayForeign
+  const changed = wasRunning !== val || wasForeign !== foreign
   _gatewayRunning = val
+  _gatewayForeign = foreign
   if (changed) {
     if (val) {
       // 仅记录恢复运行时间，避免短暂存活就把重启计数清零
       _gatewayRunningSince = Date.now()
-    } else if (wasRunning && !_userStopped && !_isUpgrading && _openclawReady) {
+    } else if (wasRunning && !_userStopped && !_isUpgrading && _openclawReady && !foreign) {
       _gatewayRunningSince = 0
       // Gateway 意外停止，尝试自动重启
       _tryAutoRestart()
     } else if (!val) {
       _gatewayRunningSince = 0
     }
-    _gwListeners.forEach(fn => { try { fn(val) } catch {} })
+    _gwListeners.forEach(fn => { try { fn(val, foreign) } catch {} })
   }
 }
 
@@ -216,7 +225,7 @@ export async function refreshGatewayStatus() {
       if (nowRunning) {
         _gwStopCount = 0
         if (!_gatewayRunning) {
-          _setGatewayRunning(true)
+          _setGatewayRunning(true, false)
         } else if (shouldResetAutoRestartCount({
           autoRestartCount: _autoRestartCount,
           runningSince: _gatewayRunningSince,
@@ -231,7 +240,7 @@ export async function refreshGatewayStatus() {
           _gwStopCount++
         }
         if (foreignRunning || _gwStopCount >= 2 || !_gatewayRunning) {
-          _setGatewayRunning(false)
+          _setGatewayRunning(false, foreignRunning)
         }
       }
     }

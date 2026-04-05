@@ -103,10 +103,11 @@ fn matches_current_gateway_owner_signature(owner: &GatewayOwnerRecord) -> bool {
         return false;
     }
     let owner_cli_path = owner.cli_path.as_ref().map(normalize_owned_path);
-    matches!(
-        (owner_cli_path.as_deref(), cli_path.as_deref()),
-        (Some(owner_cli), Some(current_cli)) if owner_cli == current_cli
-    )
+    // 仅当双方都有 cli_path 且不同才视为不匹配；任一侧缺失时放宽为兼容（向后兼容旧记录/未绑定 CLI）
+    match (owner_cli_path.as_deref(), cli_path.as_deref()) {
+        (Some(a), Some(b)) => a == b,
+        _ => true,
+    }
 }
 
 fn gateway_owner_pid_needs_refresh(owner: &GatewayOwnerRecord, pid: Option<u32>) -> bool {
@@ -1688,4 +1689,15 @@ pub async fn restart_service(label: String) -> Result<(), String> {
     let result = restart_service_impl_internal(&label).await;
     guardian_resume("manual restart");
     result
+}
+
+/// 认领外部 Gateway：将 gateway-owner.json 强制覆写为当前面板实例签名
+#[tauri::command]
+pub async fn claim_gateway() -> Result<(), String> {
+    let (running, pid) = current_gateway_runtime("ai.openclaw.gateway").await;
+    if !running {
+        return Err("Gateway 未运行，无需认领".into());
+    }
+    write_gateway_owner(pid)?;
+    Ok(())
 }

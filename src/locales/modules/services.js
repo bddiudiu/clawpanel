@@ -162,4 +162,7 @@ export default {
   taskDone: _('操作完成', 'Operation complete'),
   upgradeDone: _('升级完成', 'Upgrade complete', '升級完成'),
   upgradeScene: _('升级 OpenClaw', 'Upgrade OpenClaw', '升級 OpenClaw'),
+  claimGateway: _('认领 Gateway', 'Claim Gateway', '認領 Gateway', 'Gateway を引き取る', 'Gateway 인수', 'Nhận Gateway', 'Reclamar Gateway', 'Reivindicar Gateway', 'Принять Gateway', 'Revendiquer Gateway', 'Gateway übernehmen'),
+  claimSuccess: _('Gateway 已认领，当前面板已接管管理权', 'Gateway claimed, this panel now manages it', 'Gateway 已認領，目前面板已接管管理權', 'Gateway を引き取りました。このパネルが管理します', 'Gateway를 인수했습니다. 이 패널이 관리합니다'),
+  claimFailed: _('认领失败', 'Claim failed', '認領失敗', '引き取り失敗', '인수 실패'),
 }

@@ -459,7 +459,7 @@ function renderServices(container, services) {
     html += `
     <div class="service-card" data-label="${gw.label}">
       <div class="service-info">
-        <span class="status-dot ${cliMissing ? 'stopped' : gw.running ? 'running' : 'stopped'}"></span>
+        <span class="status-dot ${cliMissing ? 'stopped' : foreignGateway ? 'warning' : gw.running ? 'running' : 'stopped'}"></span>
         <div>
           <div class="service-name">${gw.label}</div>
           <div class="service-desc">${cliMissing
@@ -481,6 +481,7 @@ function renderServices(container, services) {
             ? `<div style="display:flex;flex-direction:column;gap:var(--space-xs);align-items:flex-end">
                  <div style="color:var(--warning);font-size:var(--font-size-xs);max-width:320px;text-align:right">${t('services.foreignGatewayHint')}</div>
                  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                   <button class="btn btn-primary btn-sm" data-action="claim-gateway">${t('services.claimGateway')}</button>
                    <button class="btn btn-secondary btn-sm" data-action="resolve-foreign-gateway">${t('dashboard.viewGuidance')}</button>
                    <button class="btn btn-secondary btn-sm" data-action="refresh-services">${t('services.refreshStatus')}</button>
                  </div>
@@ -604,6 +605,9 @@ function bindEvents(page) {
         case 'refresh-services':
           await loadServices(page)
           break
+        case 'claim-gateway':
+          await handleClaimGateway(btn, page)
+          break
         case 'resolve-foreign-gateway':
           await openGatewayConflict(page)
           break
@@ -721,6 +725,8 @@ async function handleServiceAction(action, label, page) {
       const svc = services?.find?.(s => s.label === label) || services?.[0]
       if (svc && svc.running === expectRunning) {
         toast(t('services.actionDone', { label, action: actionLabel }) + (svc.pid ? ' (PID: ' + svc.pid + ')' : ''), 'success')
+        // 立刻同步全局 Gateway 状态（顶部 banner + WS 连接）
+        import('../lib/app-state.js').then(m => m.refreshGatewayStatus()).catch(() => {})
         await loadServices(page)
         return
       }
@@ -969,6 +975,25 @@ async function handleSwitchSource(target, page) {
   const yes = await showConfirm(t('services.switchSourceConfirm', { target: targetLabel, version: recommended ? `（${recommended}）` : '' }))
   if (!yes) return
   await doUpgradeWithModal(target, page, null)
+}
+
+// ===== 认领外部 Gateway =====
+
+async function handleClaimGateway(btn, page) {
+  btn.classList.add('btn-loading')
+  btn.textContent = t('common.processing')
+  try {
+    await api.claimGateway()
+    toast(t('services.claimSuccess'), 'success')
+    // 立刻刷新全局 Gateway 状态
+    const { refreshGatewayStatus } = await import('../lib/app-state.js')
+    await refreshGatewayStatus()
+    await loadServices(page)
+  } catch (e) {
+    toast(t('services.claimFailed') + ': ' + e, 'error')
+    btn.classList.remove('btn-loading')
+    btn.textContent = t('services.claimGateway')
+  }
 }
 
 // ===== Gateway 安装/卸载 =====

@@ -107,4 +107,6 @@ export default {
   fixDoneRestartFail: _('✅ 修复完成，但 Gateway 启动失败，请手动检查', '✅ Fix completed, but Gateway failed to start. Please check manually', '✅ 修復完成，但 Gateway 啟動失敗，請手動檢查', '✅ 修復完了、しかし Gateway の起動に失敗。手動で確認してください', '✅ 수정 완료, 그러나 Gateway 시작 실패. 수동으로 확인하세요'),
   fixFailed: _('❌ 修复失败：', '❌ Fix failed:', '❌ 修復失敗：', '❌ 修復失敗：', '❌ 수정 실패:'),
   startSent: _('已发送启动命令', 'Start command sent', '已發送啟動指令', '起動コマンド送信済み', '시작 명령 전송됨'),
+  foreignGatewayBanner: _('检测到外部 Gateway 正在运行，当前面板无法管理', 'An external Gateway is running, not managed by this panel', '偵測到外部 Gateway 正在執行，目前面板無法管理', '外部 Gateway が実行中です。このパネルでは管理できません', '외부 Gateway가 실행 중이며, 이 패널에서 관리할 수 없습니다', 'Đã phát hiện Gateway bên ngoài đang chạy, bảng điều khiển này không thể quản lý', 'Se detectó un Gateway externo en ejecución, no gestionado por este panel', 'Um Gateway externo está em execução, não gerenciado por este painel', 'Обнаружен внешний Gateway, не управляемый этой панелью', 'Un Gateway externe est en cours d\'exécution, non géré par ce panneau', 'Ein externer Gateway läuft, der nicht von diesem Panel verwaltet wird'),
+  claimGateway: _('认领 Gateway', 'Claim Gateway', '認領 Gateway', 'Gateway を引き取る', 'Gateway 인수', 'Nhận Gateway', 'Reclamar Gateway', 'Reivindicar Gateway', 'Принять Gateway', 'Revendiquer Gateway', 'Gateway übernehmen'),
 }
