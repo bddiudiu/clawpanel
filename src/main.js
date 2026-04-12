@@ -398,10 +398,11 @@ async function boot() {
         navigate(engine.getDefaultRoute())
       }
 
+      // Gateway 横幅（所有引擎均注册，update() 内部按引擎判断显隐）
+      setupGatewayBanner()
+
       // === OpenClaw 专属逻辑（WebSocket、Guardian 守护等） ===
       if (getActiveEngineId() === 'openclaw') {
-        setupGatewayBanner()
-
         // 自动连接 WebSocket（如果 Gateway 正在运行）
         if (isGatewayRunning()) {
           autoConnectWebSocket()
@@ -561,6 +562,11 @@ function setupGatewayBanner() {
   if (!banner) return
 
   function update(running, foreign) {
+    // Hermes 模式不显示 OpenClaw Gateway 横幅
+    if (getActiveEngineId() !== 'openclaw') {
+      banner.classList.add('gw-banner-hidden')
+      return
+    }
     if (running || sessionStorage.getItem('gw-banner-dismissed')) {
       banner.classList.add('gw-banner-hidden')
       return
@@ -674,6 +680,8 @@ function setupGatewayBanner() {
 
   update(isGatewayRunning(), isGatewayForeign())
   onGatewayChange(update)
+  // 引擎切换时刷新横幅（Hermes 模式隐藏，OpenClaw 模式按 Gateway 状态显示）
+  onEngineChange(() => update(isGatewayRunning(), isGatewayForeign()))
 }
 
 function showGuardianRecovery() {
