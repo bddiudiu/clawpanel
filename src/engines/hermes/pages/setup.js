@@ -4,7 +4,7 @@
  * 状态机: detect → install → configure → gateway → complete
  */
 import { t } from '../../../lib/i18n.js'
-import { api } from '../../../lib/tauri-api.js'
+import { api, invalidate } from '../../../lib/tauri-api.js'
 import { PROVIDER_PRESETS } from '../../../lib/model-presets.js'
 import { getActiveEngine } from '../../../lib/engine-manager.js'
 
@@ -349,6 +349,7 @@ export function render() {
     phase = 'detect'
     draw()
     try {
+      invalidate('check_hermes', 'check_python')
       const [py, hm] = await Promise.all([api.checkPython(), api.checkHermes()])
       pyInfo = py
       hermesInfo = hm
@@ -359,6 +360,11 @@ export function render() {
       await new Promise(r => setTimeout(r, 800))
       if (hm.installed && hm.gatewayRunning) {
         phase = 'complete'
+        // 更新引擎状态并自动跳转仪表盘
+        const engine = getActiveEngine()
+        if (engine?.detect) await engine.detect()
+        window.location.hash = '#/h/dashboard'
+        return
       } else if (hm.installed && hm.configExists) {
         phase = 'gateway'
       } else if (hm.installed) {
@@ -552,7 +558,16 @@ export function render() {
 
   // --- 刷新 hermes 状态 ---
   async function refreshHermes() {
+    invalidate('check_hermes')
     try { hermesInfo = await api.checkHermes() } catch (_) {}
+    // 已安装且 Gateway 在运行 → 更新引擎状态并跳转仪表盘
+    if (hermesInfo?.installed && hermesInfo?.gatewayRunning) {
+      phase = 'complete'
+      const engine = getActiveEngine()
+      if (engine?.detect) await engine.detect()
+      window.location.hash = '#/h/dashboard'
+      return
+    }
     draw()
   }
 

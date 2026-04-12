@@ -2,7 +2,7 @@
  * Hermes Agent 引擎
  */
 import { t } from '../../lib/i18n.js'
-import { api } from '../../lib/tauri-api.js'
+import { api, invalidate } from '../../lib/tauri-api.js'
 
 // Hermes 状态
 let _ready = false
@@ -12,6 +12,7 @@ let _pollTimer = null
 
 async function detectHermesStatus() {
   try {
+    invalidate('check_hermes')
     const info = await api.checkHermes()
     _ready = !!info?.installed && !!info?.configExists
     _running = !!info?.gatewayRunning
