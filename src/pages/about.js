@@ -74,14 +74,10 @@ async function loadHermesData(page) {
       api.checkPython().catch(() => null),
     ])
 
-    let panelVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
-    try {
-      const { getVersion } = await import('@tauri-apps/api/app')
-      panelVersion = await getVersion()
-    } catch {}
+    const panelVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
 
     let panelUpdateHtml = `<span style="color:var(--text-tertiary)">${t('about.checkingUpdate')}</span>`
-    checkHotUpdate(cards, panelVersion)
+    checkNewVersion(cards, panelVersion)
 
     const installed = !!hermesInfo?.installed
     const gwRunning = !!hermesInfo?.gatewayRunning
@@ -130,17 +126,10 @@ async function loadData(page) {
     ])
 
     // 尝试从 Tauri API 获取 ClawPanel 自身版本号，失败则 fallback
-    let panelVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
-    try {
-      const { getVersion } = await import('@tauri-apps/api/app')
-      panelVersion = await getVersion()
-    } catch {
-      // 非 Tauri 环境或 API 不可用，使用构建时注入的版本号
-    }
+    const panelVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.0'
 
-    // 异步检查前端热更新
     let panelUpdateHtml = `<span style="color:var(--text-tertiary)">${t('about.checkingUpdate')}</span>`
-    checkHotUpdate(cards, panelVersion)
+    checkNewVersion(cards, panelVersion)
 
     const isInstalled = !!version.current
     const sourceLabel = version.source === 'official' ? t('about.official') : version.source === 'chinese' ? t('about.chinese') : t('about.unknownSource')
@@ -480,32 +469,54 @@ async function doInstall(page, title, source, version) {
   }
 }
 
-async function checkHotUpdate(cards, panelVersion) {
+async function checkNewVersion(cards, panelVersion) {
   const el = () => cards.querySelector('#panel-update-meta')
   const btnSm = 'padding:2px 8px;font-size:var(--font-size-xs)'
+
+  // 尝试获取 Tauri 二进制版本，检测「假更新」：
+  // 前端通过热更新升级到 v0.13.0，但 Tauri 二进制仍是 v0.9.9
+  let binaryVersion = panelVersion
   try {
-    const info = await api.checkFrontendUpdate()
+    const { getVersion } = await import('@tauri-apps/api/app')
+    binaryVersion = await getVersion()
+  } catch {}
+
+  // 前端版本 > 二进制版本 = 热更新导致版本不一致
+  const isFakeUpdate = binaryVersion !== panelVersion && compareVersions(panelVersion, binaryVersion) > 0
+
+  try {
+    const info = await api.checkPanelUpdate()
     const meta = el()
     if (!meta) return
 
-    if (info.hasUpdate || info.updateReady) {
-      const ver = info.latestVersion || info.manifest?.version || ''
-      const changelog = info.manifest?.changelog || ''
+    const latest = info?.latest || ''
+    // 用二进制版本（真实应用版本）做比较，避免假更新导致误判为「已是最新」
+    const effectiveVersion = isFakeUpdate ? binaryVersion : panelVersion
+
+    if (isFakeUpdate) {
       meta.innerHTML = `
-        <span style="color:var(--accent)">${t('about.newVersion')}: v${ver}</span>
-        ${changelog ? `<span style="color:var(--text-tertiary);font-size:var(--font-size-xs)">${changelog}</span>` : ''}
-        <a class="btn btn-primary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFromWebsite')}</a>
-        <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/releases" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFromGitHub')}</a>
+        <span style="color:var(--warning)">⚠️ ${t('about.versionMismatch', { frontend: panelVersion, binary: binaryVersion })}</span>
+        <span style="color:var(--text-tertiary);font-size:var(--font-size-xs)">${t('about.hotUpdateDeprecated')}</span>
+        <a class="btn btn-primary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFullInstaller')}</a>
+        <a class="btn btn-secondary btn-sm" href="${info.url || 'https://github.com/qingchencloud/clawpanel/releases'}" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFromGitHub')}</a>
       `
-    } else if (!info.compatible) {
-      meta.innerHTML = `<span style="color:var(--text-tertiary)">${t('about.needFullUpdate')}</span> <a class="btn btn-primary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFromWebsite')}</a> <a class="btn btn-secondary btn-sm" href="https://github.com/qingchencloud/clawpanel/releases" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFromGitHub')}</a>`
+    } else if (latest && latest !== effectiveVersion && compareVersions(latest, effectiveVersion) > 0) {
+      meta.innerHTML = `
+        <span style="color:var(--accent)">${t('about.newVersionAvailable', { version: latest })}</span>
+        <a class="btn btn-primary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFromWebsite')}</a>
+        <a class="btn btn-secondary btn-sm" href="${info.url || 'https://github.com/qingchencloud/clawpanel/releases'}" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFromGitHub')}</a>
+      `
     } else {
       meta.innerHTML = `<span style="color:var(--success)">${t('about.upToDate')}</span>`
     }
   } catch (err) {
     const meta = el()
     if (!meta) return
-    meta.innerHTML = `<span style="color:var(--text-tertiary)">${t('about.checkUpdateFailed')}</span> <a class="btn btn-secondary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="${btnSm}">${t('about.goToWebsite')}</a>`
+    if (isFakeUpdate) {
+      meta.innerHTML = `<span style="color:var(--warning)">⚠️ ${t('about.versionMismatch', { frontend: panelVersion, binary: binaryVersion })}</span> <a class="btn btn-primary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="${btnSm}">${t('about.downloadFullInstaller')}</a>`
+    } else {
+      meta.innerHTML = `<span style="color:var(--text-tertiary)">${t('about.checkUpdateFailed')}</span> <a class="btn btn-secondary btn-sm" href="https://claw.qt.cool" target="_blank" rel="noopener" style="${btnSm}">${t('about.goToWebsite')}</a>`
+    }
   }
 }
 

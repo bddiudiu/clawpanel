@@ -15,6 +15,83 @@ import crypto from 'crypto'
 import * as skillhubSdk from './lib/skillhub-sdk.js'
 const DOCKER_TASK_TIMEOUT_MS = 10 * 60 * 1000
 
+// ---------------------------------------------------------------------------
+// Hermes Agent — 路径 / 工具函数
+// ---------------------------------------------------------------------------
+const HERMES_HOME = path.join(homedir(), '.hermes')
+const HERMES_DEFAULT_PORT = 8642
+
+function hermesHome() {
+  return process.env.HERMES_HOME || HERMES_HOME
+}
+
+function uvBinDir() {
+  if (isWindows) {
+    const appdata = process.env.APPDATA
+    if (appdata) return path.join(appdata, 'clawpanel', 'bin')
+    return path.join(homedir(), '.clawpanel', 'bin')
+  }
+  if (isMac) return path.join(homedir(), 'Library', 'Application Support', 'clawpanel', 'bin')
+  return path.join(homedir(), '.local', 'share', 'clawpanel', 'bin')
+}
+
+function hermesEnhancedPath() {
+  const current = process.env.PATH || ''
+  const home = homedir()
+  const extra = [uvBinDir()]
+  if (isWindows) {
+    const appdata = process.env.APPDATA || ''
+    if (appdata) extra.push(path.join(appdata, 'uv', 'tools', 'bin'))
+    extra.push(path.join(home, '.local', 'bin'))
+    extra.push(path.join(home, '.cargo', 'bin'))
+  } else {
+    extra.push(path.join(home, '.local', 'bin'))
+    extra.push(path.join(home, '.cargo', 'bin'))
+    extra.push('/usr/local/bin')
+  }
+  const sep = isWindows ? ';' : ':'
+  return [...extra, current].filter(Boolean).join(sep)
+}
+
+function hermesGatewayPort() {
+  const configPath = path.join(hermesHome(), 'config.yaml')
+  try {
+    const content = fs.readFileSync(configPath, 'utf8')
+    for (const line of content.split('\n')) {
+      const m = line.trim().match(/^api_server_port:\s*(\d+)/)
+      if (m) { const p = parseInt(m[1], 10); if (p > 0) return p }
+    }
+  } catch {}
+  return HERMES_DEFAULT_PORT
+}
+
+function hermesGatewayUrl() {
+  try {
+    const cfg = readPanelConfig()
+    const url = cfg?.hermes?.gatewayUrl
+    if (url && typeof url === 'string' && url.trim()) return url.trim().replace(/\/+$/, '')
+  } catch {}
+  return `http://127.0.0.1:${hermesGatewayPort()}`
+}
+
+function runHermesSilent(program, args) {
+  try {
+    const result = spawnSync(program, args, {
+      env: { ...process.env, PATH: hermesEnhancedPath() },
+      timeout: 15000,
+      windowsHide: true,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    if (result.status === 0) return { ok: true, stdout: (result.stdout || '').trim() }
+    return { ok: false, stderr: (result.stderr || '').trim() }
+  } catch (e) {
+    return { ok: false, stderr: String(e) }
+  }
+}
+
+let _hermesGwProcess = null
+
 const __dev_dirname = path.dirname(fileURLToPath(import.meta.url))
 const DEFAULT_OPENCLAW_DIR = path.join(homedir(), '.openclaw')
 let OPENCLAW_DIR = DEFAULT_OPENCLAW_DIR
@@ -6214,35 +6291,6 @@ const handlers = {
 
   check_panel_update() { return { latest: null, url: 'https://github.com/qingchencloud/clawpanel/releases' } },
 
-  // 前端热更新
-  async check_frontend_update() {
-    const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-    const currentVersion = pkg.version
-
-    try {
-      const resp = await globalThis.fetch('https://claw.qt.cool/update/latest.json', {
-        signal: AbortSignal.timeout(8000),
-        headers: { 'User-Agent': 'ClawPanel-Web' },
-      })
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-      const manifest = await resp.json()
-      const latestVersion = manifest.version || ''
-      const minAppVersion = manifest.minAppVersion || '0.0.0'
-      const compatible = versionGe(currentVersion, minAppVersion)
-      const hasUpdate = !!latestVersion && latestVersion !== currentVersion && compatible && versionGt(latestVersion, currentVersion)
-      return { currentVersion, latestVersion, hasUpdate, compatible, updateReady: false, manifest }
-    } catch {
-      return { currentVersion, latestVersion: currentVersion, hasUpdate: false, compatible: true, updateReady: false, manifest: { version: currentVersion } }
-    }
-  },
-  download_frontend_update() { return { success: true, files: 12, path: path.join(OPENCLAW_DIR, 'clawpanel', 'web-update') } },
-  rollback_frontend_update() { return { success: true } },
-  get_update_status() {
-    const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-    return { currentVersion: pkg.version, updateReady: false, updateVersion: '', updateDir: path.join(OPENCLAW_DIR, 'clawpanel', 'web-update') }
-  },
   write_env_file({ path: p, config }) {
     const expanded = p.startsWith('~/') ? path.join(homedir(), p.slice(2)) : p
     if (!expanded.startsWith(OPENCLAW_DIR)) throw new Error(`只允许写入 ${OPENCLAW_DIR} 下的文件`)
@@ -6251,6 +6299,485 @@ const handlers = {
     fs.writeFileSync(expanded, config)
     return true
   },
+
+  // =========================================================================
+  // Hermes Agent 命令
+  // =========================================================================
+
+  check_python() {
+    const enhanced = hermesEnhancedPath()
+    const result = { platform: isWindows ? 'win-x64' : isMac ? 'mac-arm64' : 'linux-x64' }
+    const candidates = isWindows
+      ? [['py', ['-3', '--version']], ['python', ['--version']], ['python3', ['--version']]]
+      : [['python3', ['--version']], ['python', ['--version']]]
+    let found = false
+    for (const [cmd, args] of candidates) {
+      const r = runHermesSilent(cmd, args)
+      if (r.ok) {
+        const m = r.stdout.match(/(\d+)\.(\d+)\.(\d+)/)
+        if (m) {
+          const [, maj, min, pat] = m.map(Number)
+          result.installed = true
+          result.version = `${maj}.${min}.${pat}`
+          result.versionOk = maj >= 3 && min >= 11
+          result.pythonCmd = cmd
+          result.path = findCommandPath(cmd)
+          found = true
+          break
+        }
+      }
+    }
+    if (!found) {
+      result.installed = false; result.version = null; result.versionOk = false; result.path = null; result.pythonCmd = null
+    }
+    result.hasPip = runHermesSilent('pip', ['--version']).ok || runHermesSilent('pip3', ['--version']).ok
+    result.hasPipx = runHermesSilent('pipx', ['--version']).ok
+    const uvPath = path.join(uvBinDir(), isWindows ? 'uv.exe' : 'uv')
+    result.hasUv = fs.existsSync(uvPath) || runHermesSilent('uv', ['--version']).ok
+    result.hasGit = runHermesSilent('git', ['--version']).ok
+    result.hasBrew = !isWindows && runHermesSilent('brew', ['--version']).ok
+    return result
+  },
+
+  async check_hermes() {
+    const enhanced = hermesEnhancedPath()
+    const home = hermesHome()
+    const result = {}
+    // 1. 检测 hermes CLI
+    let r = runHermesSilent('hermes', ['version'])
+    if (!r.ok) r = runHermesSilent('hermes', ['--version'])
+    if (r.ok) {
+      const verMatch = r.stdout.split(/\s+/).find(s => /^v?\d/.test(s)) || r.stdout
+      result.installed = true
+      result.version = verMatch.replace(/^v/, '')
+      result.path = findCommandPath('hermes')
+    } else {
+      result.installed = false; result.version = null; result.path = null
+    }
+    // 2. managed
+    const managed = process.env.HERMES_MANAGED
+    if (managed) {
+      const l = managed.trim().toLowerCase()
+      result.managed = ['true','1','yes','nix','nixos'].includes(l) ? 'NixOS' : ['brew','homebrew'].includes(l) ? 'Homebrew' : 'unknown'
+    } else {
+      result.managed = fs.existsSync(path.join(home, '.managed')) ? 'NixOS' : null
+    }
+    // 3. 配置文件
+    const configPath = path.join(home, 'config.yaml')
+    const envPath = path.join(home, '.env')
+    result.configExists = fs.existsSync(configPath)
+    result.envExists = fs.existsSync(envPath)
+    result.hermesHome = home
+    // 4. 读取 model
+    try {
+      const content = fs.readFileSync(configPath, 'utf8')
+      let inModel = false
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('model:')) {
+          const val = trimmed.slice(6).trim().replace(/^["']|["']$/g, '')
+          if (val) { result.model = val; break }
+          inModel = true; continue
+        }
+        if (inModel) {
+          if (!/^\s/.test(line) && trimmed) break
+          if (trimmed.startsWith('default:')) {
+            result.model = trimmed.slice(8).trim().replace(/^["']|["']$/g, '')
+          }
+        }
+      }
+    } catch {}
+    // 5. Gateway 运行检测
+    const port = hermesGatewayPort()
+    const gwUrl = hermesGatewayUrl()
+    let gatewayRunning = false
+    try {
+      const sock = new net.Socket()
+      gatewayRunning = await new Promise(resolve => {
+        sock.setTimeout(800)
+        sock.connect(port, '127.0.0.1', () => { sock.destroy(); resolve(true) })
+        sock.on('error', () => { sock.destroy(); resolve(false) })
+        sock.on('timeout', () => { sock.destroy(); resolve(false) })
+      })
+    } catch { gatewayRunning = false }
+    result.gatewayRunning = gatewayRunning
+    result.gatewayPort = port
+    result.gatewayUrl = gwUrl
+    return result
+  },
+
+  async install_hermes({ method = 'uv-tool', extras = [] } = {}) {
+    // 1. 查找 uv
+    const uvPath = path.join(uvBinDir(), isWindows ? 'uv.exe' : 'uv')
+    let uv = fs.existsSync(uvPath) ? uvPath : null
+    if (!uv && runHermesSilent('uv', ['--version']).ok) uv = 'uv'
+    if (!uv) throw new Error('uv 未安装。请先安装 uv (https://docs.astral.sh/uv/) 或使用 Tauri 桌面版自动下载')
+    // 2. 安装
+    const pkg = extras.length
+      ? `hermes-agent[${extras.join(',')}] @ git+https://github.com/NousResearch/hermes-agent.git`
+      : 'hermes-agent @ git+https://github.com/NousResearch/hermes-agent.git'
+    const installArgs = method === 'uv-pip'
+      ? ['pip', 'install', pkg]
+      : ['tool', 'install', pkg, '--python', '3.11']
+    const result = spawnSync(uv, installArgs, {
+      env: { ...process.env, PATH: hermesEnhancedPath(), GIT_TERMINAL_PROMPT: '0' },
+      timeout: 600000,
+      windowsHide: true,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    if (result.status !== 0) throw new Error(`安装失败: ${(result.stderr || '').trim()}`)
+    // 3. 验证
+    const ver = runHermesSilent('hermes', ['version'])
+    if (ver.ok) return ver.stdout
+    throw new Error('安装完成但验证失败: hermes version 不可用')
+  },
+
+  async configure_hermes({ provider, apiKey, model, baseUrl } = {}) {
+    const home = hermesHome()
+    fs.mkdirSync(home, { recursive: true })
+    for (const d of ['cron','sessions','logs','memories','skills','pairing','hooks','image_cache','audio_cache']) {
+      fs.mkdirSync(path.join(home, d), { recursive: true })
+    }
+    const envProvider = provider === 'anthropic' || provider === 'minimax' ? 'anthropic' : provider === 'openrouter' ? 'openrouter' : 'openai'
+    const modelStr = model || (envProvider === 'anthropic' ? 'claude-sonnet-4-20250514' : envProvider === 'openrouter' ? 'anthropic/claude-sonnet-4-20250514' : 'gpt-4o')
+    const baseUrlLine = baseUrl && baseUrl.trim() ? `  base_url: ${baseUrl.trim()}\n` : ''
+    // config.yaml
+    const configPath = path.join(home, 'config.yaml')
+    let configContent
+    if (fs.existsSync(configPath)) {
+      const existing = fs.readFileSync(configPath, 'utf8')
+      configContent = _mergeHermesConfigYaml(existing, modelStr, baseUrlLine)
+    } else {
+      configContent = `# Hermes Agent configuration (managed by ClawPanel)\nmodel:\n  default: ${modelStr}\n${baseUrlLine}platform_toolsets:\n  api_server:\n    - hermes-api-server\nterminal:\n  backend: local\nplatforms:\n  api_server:\n    enabled: true\n`
+    }
+    fs.writeFileSync(configPath, configContent)
+    // .env
+    const envKey = envProvider === 'anthropic' ? 'ANTHROPIC_API_KEY' : envProvider === 'openrouter' ? 'OPENROUTER_API_KEY' : 'OPENAI_API_KEY'
+    const managedKeys = ['OPENAI_API_KEY','ANTHROPIC_API_KEY','OPENROUTER_API_KEY','OPENAI_BASE_URL','ANTHROPIC_BASE_URL','GATEWAY_ALLOW_ALL_USERS','API_SERVER_KEY']
+    const newPairs = [[envKey, apiKey], ['GATEWAY_ALLOW_ALL_USERS', 'true'], ['API_SERVER_KEY', 'clawpanel-local']]
+    if (baseUrl && baseUrl.trim()) {
+      newPairs.push([envProvider === 'anthropic' ? 'ANTHROPIC_BASE_URL' : 'OPENAI_BASE_URL', baseUrl.trim()])
+    }
+    const envPath = path.join(home, '.env')
+    let envContent
+    if (fs.existsSync(envPath)) {
+      const existing = fs.readFileSync(envPath, 'utf8')
+      envContent = _mergeEnvFile(existing, managedKeys, newPairs)
+    } else {
+      envContent = newPairs.map(([k, v]) => `${k}=${v}`).join('\n') + '\n'
+    }
+    fs.writeFileSync(envPath, envContent)
+    return '配置已保存'
+  },
+
+  async hermes_gateway_action({ action } = {}) {
+    const enhanced = hermesEnhancedPath()
+    const port = hermesGatewayPort()
+    if (action === 'start') {
+      // 检测是否已运行
+      const alive = await _tcpProbe('127.0.0.1', port, 300)
+      if (alive) return 'Gateway 已在运行'
+      // 启动
+      const home = hermesHome()
+      const envVars = { ...process.env, PATH: enhanced }
+      const envPath = path.join(home, '.env')
+      if (fs.existsSync(envPath)) {
+        for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+          const t = line.trim()
+          if (!t || t.startsWith('#')) continue
+          const eq = t.indexOf('=')
+          if (eq > 0) envVars[t.slice(0, eq).trim()] = t.slice(eq + 1).trim()
+        }
+      }
+      const logPath = path.join(home, 'gateway-run.log')
+      const logFd = fs.openSync(logPath, 'a')
+      const child = spawn('hermes', ['gateway', 'run'], {
+        cwd: home, env: envVars, stdio: ['ignore', logFd, logFd],
+        detached: true, windowsHide: true,
+      })
+      child.unref()
+      _hermesGwProcess = child
+      // 等端口可达
+      for (let i = 0; i < 40; i++) {
+        await new Promise(r => setTimeout(r, 500))
+        if (await _tcpProbe('127.0.0.1', port, 500)) {
+          fs.closeSync(logFd)
+          return 'Gateway 已启动'
+        }
+      }
+      fs.closeSync(logFd)
+      throw new Error('Gateway 启动后端口未就绪')
+    }
+    if (action === 'stop') {
+      if (_hermesGwProcess) { try { _hermesGwProcess.kill() } catch {} _hermesGwProcess = null }
+      const r = runHermesSilent('hermes', ['gateway', 'stop'])
+      if (isWindows) {
+        try { spawnSync('taskkill', ['/F', '/IM', 'hermes.exe'], { windowsHide: true, timeout: 5000 }) } catch {}
+      }
+      return 'Gateway 已停止'
+    }
+    if (action === 'status') {
+      const r = runHermesSilent('hermes', ['gateway', 'status'])
+      return r.ok ? r.stdout : 'unknown'
+    }
+    throw new Error(`不支持的操作: ${action}`)
+  },
+
+  async hermes_health_check() {
+    const url = `${hermesGatewayUrl()}/health`
+    const resp = await globalThis.fetch(url, { signal: AbortSignal.timeout(5000), headers: { 'User-Agent': 'ClawPanel-Web' } })
+    if (!resp.ok) throw new Error(`Gateway 返回 HTTP ${resp.status}`)
+    return await resp.json()
+  },
+
+  async hermes_api_proxy({ method, path: reqPath, body, headers: customHeaders } = {}) {
+    const url = `${hermesGatewayUrl()}${reqPath}`
+    const opts = { method: method || 'GET', headers: { 'User-Agent': 'ClawPanel-Web' } }
+    const timeout = (reqPath.includes('/chat/completions') || reqPath.includes('/responses')) ? 120000 : 30000
+    opts.signal = AbortSignal.timeout(timeout)
+    if (body && (method === 'POST' || method === 'PATCH')) {
+      opts.body = typeof body === 'string' ? body : JSON.stringify(body)
+      opts.headers['Content-Type'] = 'application/json'
+    }
+    if (customHeaders && typeof customHeaders === 'object') {
+      for (const [k, v] of Object.entries(customHeaders)) { if (typeof v === 'string') opts.headers[k] = v }
+    }
+    const resp = await globalThis.fetch(url, opts)
+    const text = await resp.text()
+    let json; try { json = JSON.parse(text) } catch { json = { raw: text } }
+    if (resp.status >= 400) throw new Error(json?.error || text)
+    return json
+  },
+
+  async hermes_agent_run({ input, sessionId, conversationHistory, instructions } = {}) {
+    // Web 模式下简化实现：POST /v1/runs 然后轮询或直接返回
+    const gwUrl = hermesGatewayUrl()
+    const home = hermesHome()
+    let apiKey = ''
+    try {
+      const envContent = fs.readFileSync(path.join(home, '.env'), 'utf8')
+      const m = envContent.match(/^API_SERVER_KEY=(.+)$/m)
+      if (m) apiKey = m[1].trim()
+    } catch {}
+    const payload = { input }
+    if (sessionId) payload.session_id = sessionId
+    if (conversationHistory) payload.conversation_history = conversationHistory
+    if (instructions) payload.instructions = instructions
+    const headers = { 'Content-Type': 'application/json', 'User-Agent': 'ClawPanel-Web' }
+    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`
+    const resp = await globalThis.fetch(`${gwUrl}/v1/runs`, {
+      method: 'POST', headers, body: JSON.stringify(payload), signal: AbortSignal.timeout(10000),
+    })
+    if (!resp.ok) { const t = await resp.text(); throw new Error(`HTTP ${resp.status}: ${t}`) }
+    const body = await resp.json()
+    return body.run_id || JSON.stringify(body)
+  },
+
+  hermes_read_config() {
+    const home = hermesHome()
+    const configPath = path.join(home, 'config.yaml')
+    const envPath = path.join(home, '.env')
+    let modelName = '', baseUrl = '', provider = '', apiKey = ''
+    try {
+      const content = fs.readFileSync(configPath, 'utf8')
+      let inModel = false
+      for (const line of content.split('\n')) {
+        const t = line.trim()
+        if (t.startsWith('model:')) {
+          inModel = true
+          const v = t.slice(6).trim().replace(/^["']|["']$/g, '')
+          if (v && !v.includes(':')) modelName = v
+          continue
+        }
+        if (inModel) {
+          if (t.startsWith('default:')) modelName = t.slice(8).trim().replace(/^["']|["']$/g, '')
+          else if (t.startsWith('base_url:')) baseUrl = t.slice(9).trim().replace(/^["']|["']$/g, '')
+          else if (t.startsWith('provider:')) provider = t.slice(9).trim().replace(/^["']|["']$/g, '')
+          else if (t && !t.startsWith('#') && !t.startsWith('-') && !/^\s/.test(line)) inModel = false
+        }
+      }
+    } catch {}
+    try {
+      const envContent = fs.readFileSync(envPath, 'utf8')
+      for (const line of envContent.split('\n')) {
+        const t = line.trim()
+        if (t.startsWith('OPENAI_API_KEY=')) apiKey = t.slice(15)
+        else if (t.startsWith('ANTHROPIC_API_KEY=') && !apiKey) apiKey = t.slice(18)
+        else if (t.startsWith('OPENROUTER_API_KEY=') && !apiKey) apiKey = t.slice(19)
+        if (t.startsWith('OPENAI_BASE_URL=') && !baseUrl) baseUrl = t.slice(16)
+        else if (t.startsWith('ANTHROPIC_BASE_URL=') && !baseUrl) baseUrl = t.slice(19)
+      }
+    } catch {}
+    const displayModel = modelName.includes('/') ? modelName.slice(modelName.indexOf('/') + 1) : modelName
+    return { model: displayModel, model_raw: modelName, base_url: baseUrl, provider, api_key: apiKey, config_exists: fs.existsSync(configPath) }
+  },
+
+  async hermes_fetch_models({ baseUrl, apiKey, apiType } = {}) {
+    const api = apiType || 'openai'
+    let base = baseUrl.replace(/\/+$/, '')
+    for (const suffix of ['/chat/completions', '/completions', '/responses', '/messages', '/models']) {
+      if (base.endsWith(suffix)) base = base.slice(0, -suffix.length)
+    }
+    const headers = { 'User-Agent': 'ClawPanel-Web' }
+    let url
+    if (api.includes('anthropic')) {
+      if (!base.endsWith('/v1')) base += '/v1'
+      url = `${base}/models`
+      headers['anthropic-version'] = '2023-06-01'
+      headers['x-api-key'] = apiKey
+    } else if (api.includes('google')) {
+      url = `${base}/models?key=${apiKey}`
+    } else {
+      url = `${base}/models`
+      headers['Authorization'] = `Bearer ${apiKey}`
+    }
+    const resp = await globalThis.fetch(url, { headers, signal: AbortSignal.timeout(15000) })
+    if (!resp.ok) { const t = await resp.text(); throw new Error(`HTTP ${resp.status}: ${t.slice(0, 200)}`) }
+    const data = await resp.json()
+    let models
+    if (api.includes('google')) {
+      models = (data.models || []).map(m => (m.name || '').replace('models/', '')).filter(Boolean)
+    } else {
+      models = (data.data || []).map(m => m.id).filter(Boolean)
+    }
+    return models.sort()
+  },
+
+  hermes_update_model({ model } = {}) {
+    const configPath = path.join(hermesHome(), 'config.yaml')
+    const content = fs.readFileSync(configPath, 'utf8')
+    let found = false
+    const newContent = content.split('\n').map(line => {
+      const t = line.trim()
+      if (t.startsWith('default:') && !found) {
+        found = true
+        const indent = line.length - line.trimStart().length
+        return ' '.repeat(indent) + `default: ${model}`
+      }
+      return line
+    }).join('\n')
+    if (!found) throw new Error('config.yaml 中未找到 model.default 字段')
+    fs.writeFileSync(configPath, newContent)
+    return `模型已切换为 ${model}`
+  },
+
+  async hermes_detect_environments() {
+    const result = { wsl2: { available: false }, docker: { available: false } }
+    // Docker
+    const dockerR = runHermesSilent('docker', ['info', '--format', '{{.ServerVersion}}'])
+    if (dockerR.ok) {
+      result.docker.available = true
+      result.docker.version = dockerR.stdout
+    }
+    return result
+  },
+
+  hermes_set_gateway_url({ url } = {}) {
+    const cfg = readPanelConfig()
+    if (!cfg.hermes || typeof cfg.hermes !== 'object') cfg.hermes = {}
+    if (url && url.trim()) {
+      cfg.hermes.gatewayUrl = url.trim()
+    } else {
+      delete cfg.hermes.gatewayUrl
+    }
+    if (!fs.existsSync(path.dirname(PANEL_CONFIG_PATH))) fs.mkdirSync(path.dirname(PANEL_CONFIG_PATH), { recursive: true })
+    fs.writeFileSync(PANEL_CONFIG_PATH, JSON.stringify(cfg, null, 2))
+    return `Gateway URL 已设置: ${hermesGatewayUrl()}`
+  },
+
+  async update_hermes() {
+    const uvPath = path.join(uvBinDir(), isWindows ? 'uv.exe' : 'uv')
+    const uv = fs.existsSync(uvPath) ? uvPath : 'uv'
+    const pkg = 'hermes-agent @ git+https://github.com/NousResearch/hermes-agent.git'
+    const result = spawnSync(uv, ['tool', 'install', '--reinstall', pkg, '--python', '3.11'], {
+      env: { ...process.env, PATH: hermesEnhancedPath(), GIT_TERMINAL_PROMPT: '0' },
+      timeout: 600000, windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    if (result.status !== 0) throw new Error(`升级失败: ${(result.stderr || '').trim()}`)
+    return '升级完成'
+  },
+
+  async uninstall_hermes({ cleanConfig = false } = {}) {
+    const uvPath = path.join(uvBinDir(), isWindows ? 'uv.exe' : 'uv')
+    const uv = fs.existsSync(uvPath) ? uvPath : 'uv'
+    const result = spawnSync(uv, ['tool', 'uninstall', 'hermes-agent'], {
+      env: { ...process.env, PATH: hermesEnhancedPath() },
+      timeout: 60000, windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    if (result.status !== 0) throw new Error(`卸载失败: ${(result.stderr || '').trim()}`)
+    // 清理 venv
+    const venvDir = path.join(homedir(), '.hermes-venv')
+    if (fs.existsSync(venvDir)) fs.rmSync(venvDir, { recursive: true, force: true })
+    if (cleanConfig) {
+      const home = hermesHome()
+      if (fs.existsSync(home)) fs.rmSync(home, { recursive: true, force: true })
+    }
+    return 'Hermes Agent 已卸载'
+  },
+}
+
+// Hermes 配置合并辅助函数
+function _mergeHermesConfigYaml(existing, modelStr, baseUrlLine) {
+  const lines = existing.split('\n')
+  const result = []
+  let inModel = false, written = false, i = 0
+  while (i < lines.length) {
+    const line = lines[i], t = line.trim()
+    if (t === 'model:' || t.startsWith('model:')) {
+      inModel = true; written = true
+      result.push('model:')
+      result.push(`  default: ${modelStr}`)
+      if (baseUrlLine) result.push(baseUrlLine.trimEnd())
+      i++
+      while (i < lines.length) {
+        const next = lines[i], nt = next.trim()
+        if (!nt) { i++; continue }
+        if (next.startsWith('  ') || next.startsWith('\t')) { i++; continue }
+        break
+      }
+      continue
+    }
+    if (inModel && t && !line.startsWith('  ') && !line.startsWith('\t')) inModel = false
+    if (!inModel) result.push(line)
+    i++
+  }
+  if (!written) {
+    result.push('model:')
+    result.push(`  default: ${modelStr}`)
+    if (baseUrlLine) result.push(baseUrlLine.trimEnd())
+  }
+  let final = result.join('\n')
+  if (!final.includes('platform_toolsets:')) final += '\nplatform_toolsets:\n  api_server:\n    - hermes-api-server\n'
+  if (!final.includes('terminal:')) final += 'terminal:\n  backend: local\n'
+  if (!final.includes('platforms:')) final += 'platforms:\n  api_server:\n    enabled: true\n'
+  if (!final.endsWith('\n')) final += '\n'
+  return final
+}
+
+function _mergeEnvFile(existing, managedKeys, newPairs) {
+  const result = []
+  for (const line of existing.split('\n')) {
+    const t = line.trim()
+    if (!t || t.startsWith('#')) { result.push(line); continue }
+    const eq = t.indexOf('=')
+    if (eq > 0 && managedKeys.includes(t.slice(0, eq).trim())) continue
+    result.push(line)
+  }
+  for (const [k, v] of newPairs) result.push(`${k}=${v}`)
+  let content = result.join('\n')
+  if (!content.endsWith('\n')) content += '\n'
+  return content
+}
+
+function _tcpProbe(host, port, timeoutMs) {
+  return new Promise(resolve => {
+    const sock = new net.Socket()
+    sock.setTimeout(timeoutMs)
+    sock.connect(port, host, () => { sock.destroy(); resolve(true) })
+    sock.on('error', () => { sock.destroy(); resolve(false) })
+    sock.on('timeout', () => { sock.destroy(); resolve(false) })
+  })
 }
 
 // === Vite 插件 ===
