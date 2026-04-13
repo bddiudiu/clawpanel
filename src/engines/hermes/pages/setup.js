@@ -33,6 +33,7 @@ export function render() {
   let hermesInfo = null
   let logs = []
   let installing = false
+  let installError = null
   let progress = 0
   let unlisten = null
 
@@ -132,35 +133,51 @@ export function render() {
     const btnText = installing ? `${ICONS.spinner} ${t('engine.installingBtn')}` : `${ICONS.rocket} ${t('engine.installBtn')}`
     const btnDisabled = installing ? 'disabled' : ''
 
+    // 错误提示块
+    const errorBlock = installError ? `
+      <div style="margin-bottom:14px;padding:12px 16px;background:var(--error-bg, #fef2f2);border:1px solid var(--error, #ef4444);border-radius:var(--radius-sm,6px);font-size:13px;line-height:1.6">
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          ${ICONS.error}
+          <div>
+            <div style="font-weight:600;color:var(--error, #ef4444);margin-bottom:4px">${t('engine.installFailed')}</div>
+            <div style="color:var(--text-secondary);word-break:break-all">${esc(installError)}</div>
+          </div>
+        </div>
+      </div>
+    ` : ''
+
+    // 进度 + 日志区（安装中或安装失败后都显示）
+    const hasLogs = installing || logs.length > 0
+    const progressBlock = hasLogs ? `
+      <div class="hermes-install-status">
+        <div class="hermes-progress"><div class="hermes-progress-bar${installError ? ' error' : ''}" style="width:${progress}%"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <span class="hermes-progress-text" style="font-size:12px;color:${installError ? 'var(--error, #ef4444)' : 'var(--text-tertiary)'}">${installError ? t('engine.installFailed') : progress >= 100 ? t('engine.installSuccess') : t('engine.installingBtn')}</span>
+          <span style="font-size:12px;color:var(--text-tertiary);font-family:monospace">${Math.min(progress, 100)}%</span>
+        </div>
+      </div>
+      <div class="hermes-log-panel" style="margin-top:12px">
+        <div class="hermes-log-content">${logs.map(l => `<div>${esc(l)}</div>`).join('')}</div>
+      </div>
+    ` : `
+      <div class="hermes-install-info">
+        <div class="hermes-detect-row" style="margin-bottom:6px">${ICONS.check} <span>${t('engine.installInfoUv')}</span></div>
+        <div class="hermes-detect-row" style="margin-bottom:6px">${ICONS.check} <span>${t('engine.installInfoCore')}</span></div>
+        <div class="hermes-detect-row" style="color:var(--text-tertiary)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>${t('engine.installInfoExtrasLater')}</span>
+        </div>
+      </div>
+    `
+
     return `<div class="card" style="margin-bottom:16px">
       <div class="card-body" style="padding:24px">
         <h3 style="margin:0 0 4px;font-size:16px">${t('engine.installTitle')}</h3>
         <p style="color:var(--text-secondary);margin:0 0 16px;font-size:13px">${t('engine.installDescSimple')}</p>
-
-        ${installing || progress > 0 ? `
-          <div class="hermes-install-status">
-            <div class="hermes-progress"><div class="hermes-progress-bar" style="width:${progress}%"></div></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-              <span class="hermes-progress-text" style="font-size:12px;color:var(--text-tertiary)">${progress >= 100 ? t('engine.installSuccess') : t('engine.installingBtn')}</span>
-              <span style="font-size:12px;color:var(--text-tertiary);font-family:monospace">${Math.min(progress, 100)}%</span>
-            </div>
-          </div>
-          <div class="hermes-log-panel" style="margin-top:12px">
-            <div class="hermes-log-content">${logs.map(l => `<div>${esc(l)}</div>`).join('')}</div>
-          </div>
-        ` : `
-          <div class="hermes-install-info">
-            <div class="hermes-detect-row" style="margin-bottom:6px">${ICONS.check} <span>${t('engine.installInfoUv')}</span></div>
-            <div class="hermes-detect-row" style="margin-bottom:6px">${ICONS.check} <span>${t('engine.installInfoCore')}</span></div>
-            <div class="hermes-detect-row" style="color:var(--text-tertiary)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>${t('engine.installInfoExtrasLater')}</span>
-            </div>
-          </div>
-        `}
-
+        ${errorBlock}
+        ${progressBlock}
         <div style="display:flex;gap:10px;align-items:center;margin-top:16px">
-          <button class="btn btn-primary hermes-install-btn" ${btnDisabled}>${btnText}</button>
+          <button class="btn btn-primary hermes-install-btn" ${btnDisabled}>${installError ? `${ICONS.rocket} ${t('engine.retryBtn')}` : btnText}</button>
         </div>
       </div>
     </div>`
@@ -352,6 +369,7 @@ export function render() {
   // --- 安装流程 ---
   async function doInstall() {
     installing = true
+    installError = null
     progress = 0
     logs = []
     draw()
@@ -392,6 +410,7 @@ export function render() {
       draw()
     } catch (e) {
       installing = false
+      installError = String(e.message || e)
       logs.push(`❌ ${t('engine.installFailed')}: ${e}`)
       draw()
     } finally {

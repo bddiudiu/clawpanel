@@ -6437,7 +6437,7 @@ const handlers = {
       : 'hermes-agent @ git+https://github.com/NousResearch/hermes-agent.git'
     const installArgs = method === 'uv-pip'
       ? ['pip', 'install', pkg]
-      : ['tool', 'install', pkg, '--python', '3.11']
+      : ['tool', 'install', '--force', pkg, '--python', '3.11']
     const result = spawnSync(uv, installArgs, {
       env: { ...process.env, PATH: hermesEnhancedPath(), GIT_TERMINAL_PROMPT: '0' },
       timeout: 600000,

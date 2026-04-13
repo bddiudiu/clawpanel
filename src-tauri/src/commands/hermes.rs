@@ -946,7 +946,7 @@ async fn install_via_uv_tool(
     };
 
     let mut cmd = tokio::process::Command::new(uv_path);
-    cmd.args(["tool", "install", &pkg, "--python", "3.11"]);
+    cmd.args(["tool", "install", "--force", &pkg, "--python", "3.11"]);
 
     // 配置 PyPI 镜像（extras 的依赖仍从 PyPI 下载）
     if let Some(mirror) = pypi_mirror_url() {
